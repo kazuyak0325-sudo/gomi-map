@@ -74,6 +74,25 @@
   .row .n{background:#7b1fa2;color:#fff;border-radius:50%;min-width:28px;height:28px;line-height:28px;text-align:center;font-size:12px;font-weight:bold}
   .row small{color:#777}
   .pop a{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;background:#7b1fa2;color:#fff;border-radius:6px;text-decoration:none;font-size:13px}
+  /* 横向き（高さが小さい画面）：カードを右側の縦長パネルにして、地図を広く使う */
+  @media (orientation:landscape) and (max-height:520px){
+    #hd{padding:calc(env(safe-area-inset-top) + 4px) 12px 4px}
+    #hd b{font-size:13px}
+    #hd button{padding:4px 10px;font-size:13px}
+    .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 36px)}
+    .leaflet-right{margin-right:38%}
+    #card{left:auto;right:0;top:calc(env(safe-area-inset-top) + 34px);bottom:0;width:38%;box-sizing:border-box;border-radius:14px 0 0 0;overflow:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 8px)}
+    #card .n{min-width:46px;height:36px;line-height:36px;font-size:17px}
+    #card .t{font-size:13px}
+    #card button,#card a.g{font-size:14px;padding:9px 6px}
+    #card .c2{margin-top:6px}
+    #fab{right:calc(38% + 12px);bottom:calc(env(safe-area-inset-bottom) + 10px);flex-direction:row-reverse}
+    #fab button{width:42px;height:42px;font-size:10px}
+    #steps{left:0;right:auto;width:55%;bottom:0;max-height:70%}
+    #rng{right:calc(38% + 12px);bottom:calc(env(safe-area-inset-bottom) + 64px)}
+    #sheet{top:calc(env(safe-area-inset-top) + 34px)}
+    #toast{top:calc(env(safe-area-inset-top) + 40px)}
+  }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
   #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 60px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
@@ -142,6 +161,9 @@
   map.attributionControl.addAttribution('目標物 © OpenStreetMap contributors');
   map.on('zoomend', zoomClass);
 
+  // 横向き（カードが右側）か縦向き（カードが下側）かで、地図を合わせるときの余白を変える
+  function isLandscape(){ return window.innerWidth > window.innerHeight && window.innerHeight <= 520; }
+  function padBR(){ return isLandscape() ? [Math.round(window.innerWidth * 0.38) + 20, 30] : [30, 260]; }
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmtD(m){ return m >= 1000 ? (m/1000).toFixed(1) + 'km' : Math.round(m) + 'm'; }
   function toast(t, ms){ var d = document.getElementById('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, ms || 3500); }
@@ -201,7 +223,7 @@
     for (var k = a; k <= b - 1; k++) { pts = pts.concat(LG[k].l); km += LG[k].km; mn += LG[k].min; }
     rangeLine = L.featureGroup([L.polyline(pts, {color:'#fff', weight:12, opacity:.95}), L.polyline(pts, {color:'#00897b', weight:7, opacity:1})]).addTo(map);
     bLine.classList.add('on');
-    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,110], paddingBottomRight:[30,260], maxZoom:17});
+    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,110], paddingBottomRight:padBR(), maxZoom:17});
     toast('№' + a + '→№' + b + '　約' + km.toFixed(1) + 'km・走行のみ約' + mn + '分');
     rng.style.display = 'none';
   };
@@ -235,7 +257,7 @@
     var from = pos(prevIdx), to = pos(cur);
     if (leg) legLine = L.featureGroup([L.polyline(leg.l, {color:'#fff', weight:13, opacity:.95}), L.polyline(leg.l, {color:'#2f3fe0', weight:8, opacity:1})]).addTo(map);
     else legLine = L.featureGroup([L.polyline([from, to], {color:'#2f3fe0', weight:5, dashArray:'8,8'})]).addTo(map);
-    if (fit && !following) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,70], paddingBottomRight:[30,260], maxZoom:17}); }
+    if (fit && !following) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,70], paddingBottomRight:padBR(), maxZoom:17}); }
 
     // カード
     var s = cur < S.length ? S[cur] : null, fin = cur >= S.length;
