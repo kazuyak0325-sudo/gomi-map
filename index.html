@@ -74,24 +74,27 @@
   .row .n{background:#7b1fa2;color:#fff;border-radius:50%;min-width:28px;height:28px;line-height:28px;text-align:center;font-size:12px;font-weight:bold}
   .row small{color:#777}
   .pop a{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;background:#7b1fa2;color:#fff;border-radius:6px;text-decoration:none;font-size:13px}
-  /* 横向き（高さが小さい画面）：カードを右側の縦長パネルにして、地図を広く使う */
-  @media (orientation:landscape) and (max-height:520px){
-    #hd{padding:calc(env(safe-area-inset-top) + 4px) 12px 4px}
-    #hd b{font-size:13px}
-    #hd button{padding:4px 10px;font-size:13px}
+  /* 横向き（パソコン・iPad・スマホ横向き）：左にカード、右に地図 */
+  @media (orientation:landscape) and (min-width:640px){
+    :root{--pw:clamp(300px,38%,420px)}
+    #map{left:var(--pw)}
+    #hd{padding:calc(env(safe-area-inset-top) + 4px) calc(env(safe-area-inset-right) + 12px) 4px calc(env(safe-area-inset-left) + 12px)}
+    #hd b{font-size:14px}
+    #hd button{padding:4px 12px;font-size:13px}
     .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 36px)}
-    .leaflet-right{margin-right:38%}
-    #card{left:auto;right:0;top:calc(env(safe-area-inset-top) + 34px);bottom:0;width:38%;box-sizing:border-box;border-radius:14px 0 0 0;overflow:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 8px)}
-    #card .n{min-width:46px;height:36px;line-height:36px;font-size:17px}
-    #card .t{font-size:13px}
-    #card button,#card a.g{font-size:14px;padding:9px 6px}
-    #card .c2{margin-top:6px}
-    #fab{right:calc(38% + 12px);bottom:calc(env(safe-area-inset-bottom) + 10px);flex-direction:row-reverse}
-    #fab button{width:42px;height:42px;font-size:10px}
-    #steps{left:0;right:auto;width:55%;bottom:0;max-height:70%}
-    #rng{right:calc(38% + 12px);bottom:calc(env(safe-area-inset-bottom) + 64px)}
-    #sheet{top:calc(env(safe-area-inset-top) + 34px)}
-    #toast{top:calc(env(safe-area-inset-top) + 40px)}
+    .leaflet-right{margin-right:env(safe-area-inset-right)}
+    #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + 34px);bottom:0;width:var(--pw);box-sizing:border-box;border-radius:0 14px 0 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
+    #card .t{font-size:14px}
+    /* ボタンを縦一列に（上から：完了→次へ、曲がり方、1つ戻る、Googleマップで案内） */
+    #card .c2{flex-direction:column-reverse}
+    #card .c3{flex-direction:column}
+    #card .c2 button,#card .c3 button,#card .c3 a.g{flex:none;width:100%;box-sizing:border-box}
+    #fab{right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 10px);flex-direction:row-reverse}
+    #fab button{width:44px;height:44px;font-size:10px}
+    #steps{left:var(--pw);right:auto;width:min(520px,calc(100% - var(--pw)));bottom:0;max-height:70%}
+    #rng{right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 64px)}
+    #sheet{left:var(--pw);top:calc(env(safe-area-inset-top) + 34px);border-radius:0}
+    #toast{top:calc(env(safe-area-inset-top) + 40px);left:calc(50% + 150px)}
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
@@ -162,8 +165,8 @@
   map.on('zoomend', zoomClass);
 
   // 横向き（カードが右側）か縦向き（カードが下側）かで、地図を合わせるときの余白を変える
-  function isLandscape(){ return window.innerWidth > window.innerHeight && window.innerHeight <= 520; }
-  function padBR(){ return isLandscape() ? [Math.round(window.innerWidth * 0.38) + 20, 30] : [30, 260]; }
+  function isLandscape(){ return window.innerWidth > window.innerHeight && window.innerWidth >= 640; }
+  function padBR(){ return isLandscape() ? [30, 30] : [30, 260]; }   // 横向きは地図が右側の別領域なので、下に余白は不要
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmtD(m){ return m >= 1000 ? (m/1000).toFixed(1) + 'km' : Math.round(m) + 'm'; }
   function toast(t, ms){ var d = document.getElementById('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, ms || 3500); }
