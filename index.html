@@ -19,7 +19,7 @@
   #map{position:absolute;top:0;bottom:0;left:0;right:0}
   .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 50px)}
   .leaflet-container{background:#faeee0}   /* 地図の背景（薄い肌色） */
-  .leaflet-tile-pane,.maplibregl-canvas{filter:grayscale(1) contrast(.9) brightness(1.08)}
+  .gray-tiles,.maplibregl-canvas{filter:grayscale(1) contrast(.9) brightness(1.08)}
   .maplibregl-canvas{position:absolute;left:0;top:0}
   .leaflet-maplibre-gl-container{pointer-events:none}
   .poi{position:relative;white-space:nowrap;line-height:18px}
@@ -117,7 +117,7 @@
   // ---- 地図 ----
   var map = L.map('map', {zoomControl:false}); window.gomiMap = map;
   var attr = '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>';
-  var pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr});
+  var pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr, className:'gray-tiles'});
   // 記号・文字なしのシンプル地図（道路・川・水面・鉄道のみ）。使えない端末では「見やすい地図」に自動で切り替え
   var simple = null;
   try {
@@ -128,7 +128,7 @@
     }
   } catch(e) { simple = null; }
   (simple || pale).addTo(map);
-  var std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr});
+  var std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr, className:'gray-tiles'});
   var photo = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {maxZoom:18, attribution:attr});
   var bases = {}; if (simple) bases['シンプル（記号なし）'] = simple;
   bases['見やすい地図'] = pale; bases['標準の地図'] = std; bases['航空写真'] = photo;
