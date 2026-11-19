@@ -72,7 +72,7 @@
   #steps.open{display:block}
   #steps div{padding:7px 0;border-bottom:1px solid #eee}
   #steps b{color:#e65100}
-  #sheet{position:absolute;left:0;right:0;bottom:0;top:25%;z-index:1100;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.4);display:none;flex-direction:column}
+  #sheet{position:absolute;left:0;right:auto;bottom:0;top:calc(env(safe-area-inset-top) + 64px);width:min(88%,380px);z-index:1100;background:#fff;border-radius:0 14px 0 0;box-shadow:3px 0 14px rgba(0,0,0,.4);display:none;flex-direction:column;padding-left:env(safe-area-inset-left)}   /* 一覧は左から出す */
   #sheet.open{display:flex}
   #sheet .top{padding:10px 12px;display:flex;gap:8px;border-bottom:1px solid #ddd}
   #sheet input{flex:1;font-size:16px;padding:6px 8px;border:1px solid #bbb;border-radius:6px}
@@ -104,7 +104,7 @@
     #fab button{width:44px;height:44px;font-size:10px}
     #steps{left:var(--pw);right:auto;width:min(520px,calc(100% - var(--pw)));bottom:0;max-height:70%}
     #rng{right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 64px)}
-    #sheet{left:var(--pw);top:calc(env(safe-area-inset-top) + var(--hh));border-radius:0}
+    #sheet{left:0;width:var(--pw);top:calc(env(safe-area-inset-top) + var(--hh))}
     #toast{top:calc(env(safe-area-inset-top) + var(--hh) + 8px);left:calc(50% + 150px)}
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
@@ -182,7 +182,7 @@
     else if (b.getAttribute('data-act') === 'all') { document.getElementById('bAll').click(); }
     menuEl.classList.remove('open');
   };
-  map.on('click', function(){ menuEl.classList.remove('open'); });
+  map.on('click', function(){ menuEl.classList.remove('open'); document.getElementById('sheet').classList.remove('open'); });
   // 拡大率に応じて、ピンを小さく／目標物の名前を表示
   var poiLayer = L.layerGroup();   // コンビニ・学校・お店などの目標物（拡大したときだけ表示）
   function zoomClass(){
