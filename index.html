@@ -78,11 +78,11 @@
   .pop a{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;background:#7b1fa2;color:#fff;border-radius:6px;text-decoration:none;font-size:13px}
   /* 横向き（パソコン・iPad・スマホ横向き）：左にカード、右に地図 */
   @media (orientation:landscape) and (min-width:640px){
-    :root{--pw:clamp(300px,38%,420px);--hh:60px}
+    :root{--pw:clamp(300px,38%,420px);--hh:45px}
     #map{left:var(--pw)}
-    #hd{padding:calc(env(safe-area-inset-top) + 11px) calc(env(safe-area-inset-right) + 14px) 11px calc(env(safe-area-inset-left) + 14px)}
-    #hd b{font-size:19px}
-    #hd button{padding:7px 18px;font-size:16px}
+    #hd{padding:calc(env(safe-area-inset-top) + 7px) calc(env(safe-area-inset-right) + 14px) 7px calc(env(safe-area-inset-left) + 14px)}
+    #hd b{font-size:17px}
+    #hd button{padding:5px 16px;font-size:15px}
     .leaflet-top{margin-top:calc(env(safe-area-inset-top) + var(--hh) + 4px)}
     .leaflet-right{margin-right:env(safe-area-inset-right)}
     #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + var(--hh));bottom:0;width:var(--pw);box-sizing:border-box;border-radius:0 14px 0 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
