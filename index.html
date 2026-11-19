@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ステーション地図">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#7b1fa2">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -13,7 +12,7 @@
 <link rel="stylesheet" href="lib/leaflet.css">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <style>
-  html,body{margin:0;height:100%;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#fff;-webkit-text-size-adjust:100%}
+  html,body{margin:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#fff;-webkit-text-size-adjust:100%}
   #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:#7b1fa2;color:#fff;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;display:flex;align-items:center;gap:8px}
   #hd b{flex:1;font-size:15px}
   #hd button{background:#fff;color:#7b1fa2;border:0;border-radius:16px;padding:6px 12px;font-size:14px;font-weight:bold}
@@ -345,6 +344,17 @@
   document.getElementById('bClose').onclick = function(){ sheet.classList.remove('open'); };
 
   render(true);
+
+  // 画面の実際の高さに合わせる（ホーム画面から起動したとき、下に白い余白が出るのを防ぐ）
+  function fitScreen(){
+    var h = (window.visualViewport ? window.visualViewport.height : window.innerHeight) + 'px';
+    document.documentElement.style.height = h; document.body.style.height = h;
+    map.invalidateSize();
+  }
+  window.addEventListener('resize', fitScreen); window.addEventListener('orientationchange', function(){ setTimeout(fitScreen, 300); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitScreen);
+  fitScreen(); setTimeout(fitScreen, 500);
+
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
 </script>
