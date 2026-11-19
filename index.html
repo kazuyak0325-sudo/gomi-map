@@ -58,7 +58,7 @@
   #card .c2{display:flex;flex-direction:column-reverse;gap:8px;margin-top:8px}   /* 縦一列：完了→次へ／曲がり方 */
   #card button,#card a.g{border:0;border-radius:10px;font-size:15px;padding:12px 10px;font-weight:bold;text-align:center;text-decoration:none}
   #card .c2 .steps{background:#ede7f6;color:#4a148c;flex:1}
-  #card .c2 .go{background:#7b1fa2;color:#fff;flex:2;font-size:17px}
+  #card .c2 .go{background:#7b1fa2;color:#fff;font-size:26px;height:92px;padding:0}   /* 完了ボタンは大きく押しやすく */
   #card .c3{display:flex;flex-direction:column;gap:8px;margin-top:8px}      /* 縦一列：1つ戻る／Googleマップで案内 */
   #card .c2 button,#card .c3 button,#card .c3 a.g{flex:none;width:100%;box-sizing:border-box}
   #card .c3 .back{background:#eee;color:#333;flex:1;padding:8px}
@@ -94,6 +94,7 @@
     .leaflet-right{margin-right:env(safe-area-inset-right)}
     #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + var(--hh));bottom:0;width:var(--pw);box-sizing:border-box;border-radius:0 14px 0 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
     #card .mk{font-size:19px}
+    #card .c2 .go{height:68px;font-size:22px}
     /* ボタンを縦一列に（上から：完了→次へ、曲がり方、1つ戻る、Googleマップで案内） */
     #card .c2{flex-direction:column-reverse}
     #card .c3{flex-direction:column}
@@ -302,11 +303,10 @@
       (fin ? '<div class="mk">会社へ戻ります</div><div class="st">' + esc(COMPANY.address) + '</div>'
            : '<div class="mk">' + (s.mark ? esc(s.mark) : '（目標物なし）') + '</div><div class="st">ST№ ' + esc(s.st) + '　／　地図 ' + esc(s.map) + '</div>') +
       '<div class="lg">' + prevName + 'から' + legInfo + '<span id="gd"></span></div></div></div>' +
-      '<div class="c2"><button class="steps" id="bSteps">曲がり方</button><button class="go" id="bDone">' + (fin ? '帰社しました' : '完了 → 次へ') + '</button></div>' +
+      '<div class="c2"><button class="go" id="bDone">' + (fin ? '帰社しました' : '完了 → 次へ') + '</button></div>' +
       '<div class="c3"><button class="back" id="bBack">1つ戻る</button><a class="g" target="_blank" href="' + gHref + '">Googleマップで案内' + (seq ? '' : '（現在地から）') + '</a></div>';
     document.getElementById('bDone').onclick = onDone;
     document.getElementById('bBack').onclick = onBack;
-    document.getElementById('bSteps').onclick = toggleSteps;
     buildSteps(leg);
     updateDist();
     syncCard();
