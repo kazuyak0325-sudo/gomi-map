@@ -46,8 +46,10 @@
   #card{position:absolute;left:0;right:0;bottom:0;z-index:1050;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.35);padding:10px 12px calc(env(safe-area-inset-bottom) + 10px)}
   #card .c1{display:flex;gap:10px;align-items:center}
   #card .n{background:#e65100;color:#fff;border-radius:10px;min-width:54px;height:44px;line-height:44px;text-align:center;font-size:20px;font-weight:bold;padding:0 6px}
-  #card .t{flex:1;font-size:15px;line-height:1.35}
-  #card small{color:#666;font-size:12px}
+  #card .t{flex:1;min-width:0;line-height:1.35}
+  #card .mk{font-size:20px;font-weight:bold;color:#111;line-height:1.25;word-break:break-all}
+  #card .st{font-size:15px;font-weight:bold;color:#222;margin-top:3px}
+  #card .lg{font-size:15px;font-weight:bold;color:#4a148c;margin-top:3px}
   #card .c2{display:flex;gap:8px;margin-top:8px}
   #card button,#card a.g{border:0;border-radius:10px;font-size:15px;padding:12px 10px;font-weight:bold;text-align:center;text-decoration:none}
   #card .c2 .steps{background:#ede7f6;color:#4a148c;flex:1}
@@ -84,7 +86,7 @@
     .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 36px)}
     .leaflet-right{margin-right:env(safe-area-inset-right)}
     #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + 34px);bottom:0;width:var(--pw);box-sizing:border-box;border-radius:0 14px 0 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
-    #card .t{font-size:14px}
+    #card .mk{font-size:19px}
     /* ボタンを縦一列に（上から：完了→次へ、曲がり方、1つ戻る、Googleマップで案内） */
     #card .c2{flex-direction:column-reverse}
     #card .c3{flex-direction:column}
@@ -125,6 +127,8 @@
   var params = new URLSearchParams(location.search);
   var cid = params.get('course') || Object.keys(COURSES)[0];
   var C = COURSES[cid], S = C.stations, LG = (typeof LEGS !== 'undefined' && LEGS[cid]) ? LEGS[cid] : null;
+  // 目標物の半角カナ（ﾘﾌﾞﾘｰﾌｫﾚｽﾄ）は細く詰まって読みにくいので、全角（リブリーフォレスト）にそろえる
+  S.forEach(function(s){ try { s.mark = String(s.mark || '').normalize('NFKC'); } catch(e) {} });
   var CP = [COMPANY.lat, COMPANY.lng];
 
   // ---- 進み具合（その日の分をスマホに保存）----
@@ -272,9 +276,10 @@
     var legInfo = leg ? ('　' + leg.km + 'km・約' + leg.min + '分') : ('　直線 約' + fmtD(hav(from, to)) + '（順番どおりでないため道順データなし。点線は直線です）');
     var gHref = seq ? gdir(from, to) : ('https://www.google.com/maps/dir/?api=1&destination=' + to[0] + ',' + to[1] + '&travelmode=driving');
     document.getElementById('card').innerHTML =
-      '<div class="c1"><div class="n">' + title + '</div><div class="t"><b>' + (fin ? '最後は会社へ戻ります' : main) + '</b><br><small>' +
-      (fin ? esc(main) : '地図 ' + esc(s.map)) + '<br>' + prevName + 'から' + legInfo +
-      '<span id="gd"></span></small></div></div>' +
+      '<div class="c1"><div class="n">' + title + '</div><div class="t">' +
+      (fin ? '<div class="mk">会社へ戻ります</div><div class="st">' + esc(COMPANY.address) + '</div>'
+           : '<div class="mk">' + (s.mark ? esc(s.mark) : '（目標物なし）') + '</div><div class="st">ST№ ' + esc(s.st) + '　／　地図 ' + esc(s.map) + '</div>') +
+      '<div class="lg">' + prevName + 'から' + legInfo + '<span id="gd"></span></div></div></div>' +
       '<div class="c2"><button class="steps" id="bSteps">曲がり方</button><button class="go" id="bDone">' + (fin ? '帰社しました' : '完了 → 次へ') + '</button></div>' +
       '<div class="c3"><button class="back" id="bBack">1つ戻る</button><a class="g" target="_blank" href="' + gHref + '">Googleマップで案内' + (seq ? '' : '（現在地から）') + '</a></div>';
     document.getElementById('bDone').onclick = onDone;
