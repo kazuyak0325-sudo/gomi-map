@@ -48,19 +48,20 @@
   #fab{position:absolute;right:12px;bottom:calc(var(--cardh,300px) + 14px);z-index:1000;display:flex;flex-direction:column;gap:10px}
   #fab button{width:48px;height:48px;border-radius:50%;border:0;background:#fff;color:#7b1fa2;font-size:11px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,.4)}
   #fab button.on{background:#7b1fa2;color:#fff}
-  #card{position:absolute;left:0;right:0;bottom:0;z-index:1050;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.35);padding:10px 12px calc(env(safe-area-inset-bottom) + 10px)}
+  #card{position:absolute;left:0;right:0;bottom:0;z-index:1050;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.35);padding:8px 12px calc(env(safe-area-inset-bottom) + 6px)}
   #card .c1{display:flex;gap:10px;align-items:center}
-  #card .n{background:#e65100;color:#fff;border-radius:10px;min-width:54px;height:44px;line-height:44px;text-align:center;font-size:20px;font-weight:bold;padding:0 6px}
+  #card .n{background:#e65100;color:#fff;border-radius:10px;min-width:50px;height:40px;line-height:40px;text-align:center;font-size:18px;font-weight:bold;padding:0 6px}
   #card .t{flex:1;min-width:0;line-height:1.35}
-  #card .mk{font-size:20px;font-weight:bold;color:#111;line-height:1.25;word-break:break-all}
-  #card .st{font-size:15px;font-weight:bold;color:#222;margin-top:3px}
-  #card .lg{font-size:15px;font-weight:bold;color:#4a148c;margin-top:3px}
-  #card .c2{display:flex;flex-direction:column-reverse;gap:8px;margin-top:8px}   /* 縦一列：完了→次へ／曲がり方 */
+  #card .mk{font-size:18px;font-weight:bold;color:#111;line-height:1.25;word-break:break-all}
+  #card .st{font-size:14px;font-weight:bold;color:#222;margin-top:3px}
+  #card .lg{font-size:14px;font-weight:bold;color:#4a148c;margin-top:3px}
+  #card .c2{display:flex;flex-direction:column-reverse;gap:6px;margin-top:6px}   /* 縦一列：完了→次へ／曲がり方 */
   #card button,#card a.g{border:0;border-radius:10px;font-size:15px;padding:12px 10px;font-weight:bold;text-align:center;text-decoration:none}
   #card .c2 .steps{background:#ede7f6;color:#4a148c;flex:1}
-  #card .c2 .go{background:#7b1fa2;color:#fff;font-size:26px;height:92px;padding:0}   /* 完了ボタンは大きく押しやすく */
-  #card .c3{display:flex;flex-direction:column;gap:8px;margin-top:8px}      /* 縦一列：1つ戻る／Googleマップで案内 */
+  #card .c2 .go{background:#7b1fa2;color:#fff;font-size:24px;height:64px;padding:0}   /* 完了ボタンは大きく押しやすく */
+  #card .c3{display:flex;flex-direction:column;gap:5px;margin-top:5px}      /* 縦一列：1つ戻る／Googleマップで案内 */
   #card .c2 button,#card .c3 button,#card .c3 a.g{flex:none;width:100%;box-sizing:border-box}
+  #card .c3 button,#card .c3 a.g{padding:7px 10px;font-size:14px}
   #card .c3 .back{background:#eee;color:#333;flex:1;padding:8px}
   #card .c3 a.g{background:#eee;color:#333;flex:1;padding:8px}
   #rng{display:none;position:absolute;right:12px;bottom:calc(var(--cardh,300px) + 66px);z-index:1060;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.4);padding:10px 12px;font-size:14px;line-height:2}
