@@ -144,7 +144,7 @@
 
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmtD(m){ return m >= 1000 ? (m/1000).toFixed(1) + 'km' : Math.round(m) + 'm'; }
-  function toast(t){ var d = document.getElementById('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, 3500); }
+  function toast(t, ms){ var d = document.getElementById('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, ms || 3500); }
   function gdir(a, b){ return 'https://www.google.com/maps/dir/?api=1&origin=' + a[0] + ',' + a[1] + '&destination=' + b[0] + ',' + b[1] + '&travelmode=driving'; }
   function pos(i){ return i < 0 ? CP : (i >= S.length ? CP : [S[i].lat, S[i].lng]); }
 
@@ -311,7 +311,18 @@
         if (following) map.panTo(lastPos, {animate:true, duration:0.5});
       }
       watching = true; updateDist();
-    }, function(){ toast('現在地を取得できませんでした（位置情報の許可、またはHTTPSでの表示が必要です）'); }, {enableHighAccuracy:true});
+    }, function(err){
+      if (me) return;   // 追跡が始まったあとの一時的な途切れでは、案内を出さない
+      var ua = navigator.userAgent, inApp = /Line\/|FBAN|FBAV|Instagram|GSA\/|Gmail|wv\)/i.test(ua);
+      var msg;
+      if (!window.isSecureContext) msg = 'HTTPSで開かれていないため、現在地を使えません';
+      else if (err && err.code === 1) msg = inApp ? 'メール等のアプリ内ブラウザでは位置情報を使えません。SafariまたはChromeで開き直してください'
+        : '位置情報が許可されていません。端末の設定で、このブラウザの位置情報を「許可」にしてください';
+      else if (err && err.code === 2) msg = '位置を取得できません。端末の「位置情報サービス」がオンか、電波の状態をご確認ください';
+      else if (err && err.code === 3) msg = '位置の取得に時間がかかっています。屋外で、もう一度お試しください';
+      else msg = '現在地を取得できませんでした';
+      toast(msg, 10000);
+    }, {enableHighAccuracy:true, timeout:20000, maximumAge:5000});
   };
   var bAll = document.getElementById('bAll'); bAll.classList.toggle('on', showAll);
   bAll.onclick = function(){ showAll = !showAll; bAll.classList.toggle('on', showAll); render(false); toast(showAll ? '全ピンを番号つきで表示' : '次の5件だけ番号つきで表示'); };
