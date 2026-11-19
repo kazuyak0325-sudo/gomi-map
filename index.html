@@ -13,11 +13,11 @@
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <style>
   html,body{margin:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#fff;-webkit-text-size-adjust:100%}
-  #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:#7b1fa2;color:#fff;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;display:flex;align-items:center;gap:8px}
-  #hd b{flex:1;font-size:15px}
-  #hd button{background:#fff;color:#7b1fa2;border:0;border-radius:16px;padding:6px 12px;font-size:14px;font-weight:bold}
+  #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:#7b1fa2;color:#fff;padding:calc(env(safe-area-inset-top) + 13px) 14px 13px;display:flex;align-items:center;gap:8px}
+  #hd b{flex:1;font-size:18px}
+  #hd button{background:#fff;color:#7b1fa2;border:0;border-radius:18px;padding:7px 16px;font-size:16px;font-weight:bold}
   #map{position:absolute;top:0;bottom:0;left:0;right:0}
-  .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 50px)}
+  .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 68px)}
   .leaflet-container{background:#faeee0}   /* 地図の背景（薄い肌色） */
   .gray-tiles,.maplibregl-canvas{filter:grayscale(1) contrast(.9) brightness(1.08)}
   .maplibregl-canvas{position:absolute;left:0;top:0}
@@ -100,7 +100,7 @@
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
-  #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 60px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
+  #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 76px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
 </style>
 </head>
 <body>
@@ -230,7 +230,7 @@
     for (var k = a; k <= b - 1; k++) { pts = pts.concat(LG[k].l); km += LG[k].km; mn += LG[k].min; }
     rangeLine = L.featureGroup([L.polyline(pts, {color:'#fff', weight:12, opacity:.95}), L.polyline(pts, {color:'#00897b', weight:7, opacity:1})]).addTo(map);
     bLine.classList.add('on');
-    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,110], paddingBottomRight:padBR(), maxZoom:17});
+    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,130], paddingBottomRight:padBR(), maxZoom:17});
     toast('№' + a + '→№' + b + '　約' + km.toFixed(1) + 'km・走行のみ約' + mn + '分');
     rng.style.display = 'none';
   };
@@ -264,7 +264,7 @@
     var from = pos(prevIdx), to = pos(cur);
     if (leg) legLine = L.featureGroup([L.polyline(leg.l, {color:'#fff', weight:13, opacity:.95}), L.polyline(leg.l, {color:'#2f3fe0', weight:8, opacity:1})]).addTo(map);
     else legLine = L.featureGroup([L.polyline([from, to], {color:'#2f3fe0', weight:5, dashArray:'8,8'})]).addTo(map);
-    if (fit && !following) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,70], paddingBottomRight:padBR(), maxZoom:17}); }
+    if (fit && !following) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,90], paddingBottomRight:padBR(), maxZoom:17}); }
 
     // カード
     var s = cur < S.length ? S[cur] : null, fin = cur >= S.length;
