@@ -45,7 +45,7 @@
   .co{background:#263238;color:#fff;border:2px solid #fff;border-radius:6px;width:36px;height:22px;line-height:22px;text-align:center;font-size:12px;font-weight:bold;box-shadow:0 1px 4px rgba(0,0,0,.5)}
   .co.sel{background:#e65100;transform:scale(1.2)}
   .me{width:16px;height:16px;background:#1a73e8;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(26,115,232,.4)}
-  #fab{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 190px);z-index:1000;display:flex;flex-direction:column;gap:10px}
+  #fab{position:absolute;right:12px;bottom:calc(var(--cardh,300px) + 14px);z-index:1000;display:flex;flex-direction:column;gap:10px}
   #fab button{width:48px;height:48px;border-radius:50%;border:0;background:#fff;color:#7b1fa2;font-size:11px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,.4)}
   #fab button.on{background:#7b1fa2;color:#fff}
   #card{position:absolute;left:0;right:0;bottom:0;z-index:1050;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.35);padding:10px 12px calc(env(safe-area-inset-bottom) + 10px)}
@@ -55,18 +55,19 @@
   #card .mk{font-size:20px;font-weight:bold;color:#111;line-height:1.25;word-break:break-all}
   #card .st{font-size:15px;font-weight:bold;color:#222;margin-top:3px}
   #card .lg{font-size:15px;font-weight:bold;color:#4a148c;margin-top:3px}
-  #card .c2{display:flex;gap:8px;margin-top:8px}
+  #card .c2{display:flex;flex-direction:column-reverse;gap:8px;margin-top:8px}   /* 縦一列：完了→次へ／曲がり方 */
   #card button,#card a.g{border:0;border-radius:10px;font-size:15px;padding:12px 10px;font-weight:bold;text-align:center;text-decoration:none}
   #card .c2 .steps{background:#ede7f6;color:#4a148c;flex:1}
   #card .c2 .go{background:#7b1fa2;color:#fff;flex:2;font-size:17px}
-  #card .c3{display:flex;gap:8px;margin-top:6px}
+  #card .c3{display:flex;flex-direction:column;gap:8px;margin-top:8px}      /* 縦一列：1つ戻る／Googleマップで案内 */
+  #card .c2 button,#card .c3 button,#card .c3 a.g{flex:none;width:100%;box-sizing:border-box}
   #card .c3 .back{background:#eee;color:#333;flex:1;padding:8px}
   #card .c3 a.g{background:#eee;color:#333;flex:1;padding:8px}
-  #rng{display:none;position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 250px);z-index:1060;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.4);padding:10px 12px;font-size:14px;line-height:2}
+  #rng{display:none;position:absolute;right:12px;bottom:calc(var(--cardh,300px) + 66px);z-index:1060;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.4);padding:10px 12px;font-size:14px;line-height:2}
   #rng input{width:56px;font-size:16px;padding:4px;border:1px solid #bbb;border-radius:6px;text-align:center}
   #rng button{border:0;border-radius:8px;padding:8px 12px;margin-right:6px;font-size:14px;font-weight:bold;background:#ede7f6;color:#4a148c}
   #rng #rShow{background:#1a237e;color:#fff}
-  #steps{position:absolute;left:0;right:0;bottom:178px;max-height:38%;overflow:auto;z-index:1040;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.3);display:none;padding:6px 12px;font-size:15px}
+  #steps{position:absolute;left:0;right:0;bottom:var(--cardh,300px);max-height:38%;overflow:auto;z-index:1040;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.3);display:none;padding:6px 12px;font-size:15px}
   #steps.open{display:block}
   #steps div{padding:7px 0;border-bottom:1px solid #eee}
   #steps b{color:#e65100}
@@ -191,7 +192,7 @@
 
   // 横向き（カードが右側）か縦向き（カードが下側）かで、地図を合わせるときの余白を変える
   function isLandscape(){ return window.innerWidth > window.innerHeight && window.innerWidth >= 640; }
-  function padBR(){ return isLandscape() ? [30, 30] : [30, 260]; }   // 横向きは地図が右側の別領域なので、下に余白は不要
+  function padBR(){ return isLandscape() ? [30, 30] : [30, 350]; }   // 横向きは地図が右側の別領域なので、下に余白は不要
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmtD(m){ return m >= 1000 ? (m/1000).toFixed(1) + 'km' : Math.round(m) + 'm'; }
   function toast(t, ms){ var d = document.getElementById('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, ms || 3500); }
@@ -308,7 +309,10 @@
     document.getElementById('bSteps').onclick = toggleSteps;
     buildSteps(leg);
     updateDist();
+    syncCard();
   }
+  // カードの高さを、右下ボタンなどの位置に反映する
+  function syncCard(){ var c = document.getElementById('card'); document.documentElement.style.setProperty('--cardh', c.offsetHeight + 'px'); }
   function onDone(){
     if (cur < S.length) { done[S[cur].no] = true; save(); prevIdx = cur; cur = cur + 1; render(true); }
     else { toast('お疲れさまでした。本日のコースは完了です'); }
@@ -400,7 +404,7 @@
   function fitScreen(){
     var h = (window.visualViewport ? window.visualViewport.height : window.innerHeight) + 'px';
     document.documentElement.style.height = h; document.body.style.height = h;
-    map.invalidateSize();
+    map.invalidateSize(); syncCard();
   }
   window.addEventListener('resize', fitScreen); window.addEventListener('orientationchange', function(){ setTimeout(fitScreen, 300); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fitScreen);
