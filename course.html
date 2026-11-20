@@ -143,7 +143,7 @@
 <script src="base.js"></script>
 <script>
 // コースデータを、URLの ?c=コースID から読み込む（なければコース選択へ）
-(function(){ var c = new URLSearchParams(location.search).get('c'); if (!c) { location.replace('index.html'); return; } document.write('<script src="data/' + encodeURIComponent(c) + '.js"><\/script>'); })();
+(function(){ var c = new URLSearchParams(location.search).get('c'); if (!c) { location.replace('index.html'); return; } document.write('<script src="data/' + encodeURIComponent(c) + '.js?t=' + Date.now() + '"><\/script>'); })();
 </script>
 <script>
 (function(){
