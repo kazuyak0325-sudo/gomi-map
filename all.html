@@ -31,6 +31,8 @@
   .r .m{color:#444;font-size:14px;margin-top:2px}
   .chip{display:inline-block;margin:4px 4px 0 0;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;white-space:nowrap}
   .pp .chip{margin-top:3px}
+  .adm{display:none;margin-top:8px;padding:6px 12px;border:2px solid #37474f;border-radius:8px;color:#37474f;font-size:13px;font-weight:bold;text-decoration:none}
+  @media (min-width:900px){ .adm{display:inline-block} }
 </style>
 </head>
 <body>
@@ -74,7 +76,7 @@
   function renderMiss(){
     var miss = ALL.missing.filter(inCourse).sort(function(a, b){ return b.c.length - a.c.length || (+a.st) - (+b.st); });
     document.getElementById('ph').textContent = '⚠ 位置のないステーション ' + miss.length + '種類（地図には出ません）';
-    document.getElementById('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
+    document.getElementById('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div><a class="adm" target="_blank" href="http://127.0.0.1:8790/#k=' + encodeURIComponent(m.k) + '">📌 管理ツールでピンを置く</a></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
   }
   document.getElementById('bMiss').onclick = function(){ renderMiss(); panel.classList.add('open'); };
   document.getElementById('pclose').onclick = function(){ panel.classList.remove('open'); };
