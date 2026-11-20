@@ -79,7 +79,10 @@
   #sheet .top button{border:0;background:#eee;border-radius:6px;padding:0 12px;font-size:14px}
   #list{overflow:auto;flex:1}
   .row{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid #eee;font-size:15px}
-  .row.done{opacity:.45}
+  .row.done .n,.row.done .tx{opacity:.45}
+  .row .tx{flex:1;min-width:0}
+  .row .ck{margin-left:auto;min-width:52px;height:42px;border-radius:10px;border:2px solid #7b1fa2;background:#fff;color:#7b1fa2;font-size:20px;font-weight:bold;padding:0}
+  .row.done .ck{background:#7b1fa2;color:#fff}
   .row .n{background:#7b1fa2;color:#fff;border-radius:50%;min-width:28px;height:28px;line-height:28px;text-align:center;font-size:12px;font-weight:bold}
   .row small{color:#777}
   .pop a{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;background:#7b1fa2;color:#fff;border-radius:6px;text-decoration:none;font-size:13px}
@@ -314,8 +317,18 @@
   }
   // カードの高さを、右下ボタンなどの位置に反映する
   function syncCard(){ var c = document.getElementById('card'); document.documentElement.style.setProperty('--cardh', c.offsetHeight + 'px'); }
+  // 一覧のチェックから、好きな場所を完了／取り消しにする（順番を飛ばした場所の記録用）
+  function toggleDone(i){
+    var s = S[i], now = !done[s.no];
+    if (now) done[s.no] = true; else delete done[s.no];
+    save();
+    if (now && i === cur) { var n = i + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; }   // 今向かう場所を完了にしたら、次へ進める
+    render(false);
+    var st = list.scrollTop; renderList(); list.scrollTop = st;
+    toast('№' + s.no + (now ? ' を完了にしました' : ' の完了を取り消しました'));
+  }
   function onDone(){
-    if (cur < S.length) { done[S[cur].no] = true; save(); prevIdx = cur; cur = cur + 1; render(true); }
+    if (cur < S.length) { done[S[cur].no] = true; save(); var n = cur + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; render(true); }   // 完了済みの場所は飛ばす
     else { toast('お疲れさまでした。本日のコースは完了です'); }
   }
   function onBack(){
@@ -388,10 +401,11 @@
   function renderList(){
     var t = q.value.trim().toLowerCase();
     list.innerHTML = S.map(function(s, i){ return {s:s, i:i}; }).filter(function(o){ var s = o.s; return !t || (s.no+' '+s.st+' '+s.map+' '+s.mark).toLowerCase().indexOf(t) >= 0; }).map(function(o){
-      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div>ST' + s.st + '　' + esc(s.mark) + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div></div>';
+      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div class="tx">ST' + s.st + '　' + esc(s.mark) + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div><button class="ck" data-ck="' + o.i + '" aria-label="完了">✓</button></div>';
     }).join('');
   }
   list.onclick = function(e){
+    var ck = e.target.closest('.ck'); if (ck) { toggleDone(+ck.getAttribute('data-ck')); return; }   // チェック：その場所だけ完了／取り消し
     var row = e.target.closest('.row'); if (!row) return;
     var i = +row.dataset.idx; sheet.classList.remove('open'); map.setView(pos(i), 17); markers[i].openPopup();
   };
