@@ -48,15 +48,26 @@
   .r .m{color:#444;font-size:14px;margin-top:2px}
   .chip{display:inline-block;margin:4px 4px 0 0;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;white-space:nowrap}
   .pp .chip{margin-top:3px}
+  #bar button#bSearch{background:#e3f2fd;color:#1565c0;font-size:16px;padding:8px 12px}
+  #spanel{position:absolute;z-index:1100;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + 108px);background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.4);display:none;flex-direction:column}
+  #spanel.open{display:flex}
+  #spanel .top{padding:10px 12px;border-bottom:1px solid #ddd;display:flex;gap:8px}
+  #spanel input{flex:1;min-width:0;font-size:16px;padding:9px;border:1px solid #bbb;border-radius:8px}
+  #spanel .top button{border:0;background:#eee;border-radius:8px;padding:0 14px;font-size:14px}
+  #slist{flex:1;overflow:auto}
+  .r.tap{cursor:pointer}
+  .r.tap:active{background:#e3f2fd}
+  .tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:8px;background:#fff3e0;color:#e65100;font-size:11px;font-weight:bold}
   .adm{display:none;margin-top:8px;padding:6px 12px;border:2px solid #37474f;border-radius:8px;color:#37474f;font-size:13px;font-weight:bold;text-decoration:none}
   @media (min-width:900px){ .adm{display:inline-block} }
 </style>
 </head>
 <body>
 <div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b></div>
-<div id="bar"><select id="fc"></select><button id="bAer">航空写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
+<div id="bar"><select id="fc"></select><button id="bSearch" aria-label="検索">🔍</button><button id="bAer">航空写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
 <div id="map"></div>
 <div id="panel"><div class="top"><b id="ph"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。</p><div id="plist"></div></div>
+<div id="spanel"><div class="top"><input id="sq" type="search" placeholder="ST№・目標物・地図ページで検索" autocomplete="off"><button id="sclose">閉じる</button></div><div id="slist"></div></div>
 <script src="lib/leaflet.js"></script>
 <script src="lib/maplibre-gl.js"></script>
 <script src="lib/leaflet-maplibre-gl.js"></script>
@@ -143,10 +154,36 @@
     document.getElementById('ph').textContent = '⚠ 位置のないステーション ' + miss.length + '種類（地図には出ません）';
     document.getElementById('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div><a class="adm" target="_blank" href="http://127.0.0.1:8790/#k=' + encodeURIComponent(m.k) + '">📌 管理ツールでピンを置く</a></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
   }
-  document.getElementById('bMiss').onclick = function(){ renderMiss(); panel.classList.add('open'); };
+  // ---- ステーション検索（ST№・目標物・地図ページ。位置のないステーションも出す）----
+  var spanel = document.getElementById('spanel'), sq = document.getElementById('sq'), slist = document.getElementById('slist'), hl = null, sres = [];
+  var INDEX = ALL.pins.map(function(p){ return {p:p, pin:true, t:norm(p.st + ' ' + p.map + ' ' + p.mark).toLowerCase()}; })
+    .concat(ALL.missing.map(function(m){ return {p:m, pin:false, t:norm(m.st + ' ' + m.map + ' ' + m.mark).toLowerCase()}; }));
+  function clearHl(){ if (hl) { map.removeLayer(hl); hl = null; } }
+  function doSearch(){
+    var q = norm(sq.value).toLowerCase().trim();
+    if (!q) { sres = []; slist.innerHTML = '<div class="r" style="color:#666;font-size:14px;line-height:1.7">ST№（例：782）、目標物（例：公民館）、地図ページ（例：69-B）で探せます。<br>言葉を空白で区切ると、絞り込めます（例：公民館 69）。</div>'; return; }
+    var toks = q.split(/\s+/);
+    var res = INDEX.filter(function(x){ return toks.every(function(t){ return x.t.indexOf(t) >= 0; }); });
+    res.sort(function(a, b){ var ea = a.p.st === q ? 0 : 1, eb = b.p.st === q ? 0 : 1; return ea - eb || (b.pin - a.pin) || (+a.p.st) - (+b.p.st); });
+    var total = res.length; sres = res.slice(0, 60);
+    slist.innerHTML = '<div class="r" style="font-size:12px;color:#666;background:#faf6ee">' + (total ? total + '件' + (total > 60 ? '（先頭の60件を表示）' : '') : '見つかりません') + '</div>' + sres.map(function(x, i){
+      var p = x.p;
+      return '<div class="r' + (x.pin ? ' tap' : '') + '" data-i="' + i + '"><div class="h">ST' + esc(p.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(p.map) + '</span>' + (x.pin ? '' : '<span class="tag">位置なし</span>') + '</div><div class="m">' + esc(norm(p.mark)) + '</div><div>' + chips(p.c) + '</div>' + (x.pin ? '' : '<a class="adm" target="_blank" href="http://127.0.0.1:8790/#k=' + encodeURIComponent(p.k) + '">📌 管理ツールでピンを置く</a>') + '</div>';
+    }).join('');
+  }
+  sq.oninput = doSearch;
+  slist.onclick = function(e){
+    var r = e.target.closest('.tap'); if (!r) return; var x = sres[+r.getAttribute('data-i')]; if (!x || !x.pin) return; var p = x.p;
+    spanel.classList.remove('open'); clearHl();
+    hl = L.circleMarker([p.lat, p.lng], {radius:16, color:'#e65100', weight:4, fillColor:'#fff', fillOpacity:.25}).addTo(map).bindPopup(popupHtml(p));
+    map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17)); hl.openPopup();
+  };
+  document.getElementById('bSearch').onclick = function(){ panel.classList.remove('open'); spanel.classList.add('open'); sq.focus(); sq.select(); doSearch(); };
+  document.getElementById('sclose').onclick = function(){ spanel.classList.remove('open'); };
+  document.getElementById('bMiss').onclick = function(){ spanel.classList.remove('open'); renderMiss(); panel.classList.add('open'); };
   document.getElementById('pclose').onclick = function(){ panel.classList.remove('open'); };
   document.getElementById('back').onclick = function(){ location.href = 'index.html'; };
-  map.on('click', function(){ panel.classList.remove('open'); });
+  map.on('click', function(){ panel.classList.remove('open'); spanel.classList.remove('open'); clearHl(); });
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
 </script>
