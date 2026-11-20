@@ -104,23 +104,34 @@
   map.on('zoomend', zoomClass);
 
   // ---- ステーションのピン ----
-  var layer = L.layerGroup().addTo(map), fc = document.getElementById('fc');
+  // 軽くするため：引いたとき(ズーム14以下)は、軽い丸だけを描く。拡大したとき(15以上)は、見えている範囲のピンだけを、番号・名前つきで描く
+  var layer = L.layerGroup().addTo(map), fc = document.getElementById('fc'), cur = [], canvas = L.canvas({padding:.5});
+  window.allMap = map;
   fc.innerHTML = '<option value="">全コース（利用可 ' + ALL.courses.filter(function(c){ return c.avail; }).length + '）</option>' + ALL.courses.filter(function(c){ return c.avail; }).map(function(c){ return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('');
   function inCourse(o){ return !fc.value || o.c.indexOf(fc.value) >= 0; }
-  function draw(){
-    layer.clearLayers(); var pts = [];
-    ALL.pins.filter(inCourse).forEach(function(p){
-      var first = CB[(fc.value && p.c.indexOf(fc.value) >= 0) ? fc.value : p.c[0]];
-      var fs = String(p.st).length >= 4 ? 8 : 10;
-      var m = L.marker([p.lat, p.lng], {icon:L.divIcon({className:'', html:'<div class="sp' + (p.a ? ' add' : '') + '" style="background:' + first.color + ';color:' + (isLight(first.color) ? '#222' : '#fff') + ';font-size:' + fs + 'px">' + esc(p.st) + '</div>', iconSize:[26,26], iconAnchor:[13,13]})}).addTo(layer);
-      m.bindPopup('<div class="pp"><b>ST' + esc(p.st) + '</b>　地図 ' + esc(p.map) + '<br>' + esc(norm(p.mark)) + '<br>' + chips(p.c) + '</div>');
-      if (p.mark) m.bindTooltip(esc(norm(p.mark)), {permanent:true, direction:'right', offset:[16,0], className:'lbl'});
-      pts.push([p.lat, p.lng]);
-    });
-    document.getElementById('nm').textContent = ALL.missing.filter(inCourse).length;
-    return pts;
+  function courseOf(p){ return CB[(fc.value && p.c.indexOf(fc.value) >= 0) ? fc.value : p.c[0]]; }
+  function popupHtml(p){ return '<div class="pp"><b>ST' + esc(p.st) + '</b>　地図 ' + esc(p.map) + '<br>' + esc(norm(p.mark)) + '<br>' + chips(p.c) + '</div>'; }
+  function build(){
+    layer.clearLayers(); var z = map.getZoom();
+    if (z < 15) {
+      cur.forEach(function(p){
+        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : 5, color:p.a ? '#2e7d32' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
+      });
+    } else {
+      var bd = map.getBounds().pad(0.3), n = 0;
+      for (var i = 0; i < cur.length && n < 500; i++) {
+        var p = cur[i]; if (!bd.contains([p.lat, p.lng])) continue; n++;
+        var c = courseOf(p), fs = String(p.st).length >= 4 ? 8 : 10;
+        var m = L.marker([p.lat, p.lng], {icon:L.divIcon({className:'', html:'<div class="sp' + (p.a ? ' add' : '') + '" style="background:' + c.color + ';color:' + (isLight(c.color) ? '#222' : '#fff') + ';font-size:' + fs + 'px">' + esc(p.st) + '</div>', iconSize:[26,26], iconAnchor:[13,13]})}).addTo(layer);
+        m.bindPopup(popupHtml(p));
+        if (p.mark) m.bindTooltip(esc(norm(p.mark)), {permanent:true, direction:'right', offset:[16,0], className:'lbl'});
+      }
+    }
   }
-  var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05)); else map.setView([36.87, 140.06], 12);
+  map.on('moveend', build);
+  function draw(){ cur = ALL.pins.filter(inCourse); document.getElementById('nm').textContent = ALL.missing.filter(inCourse).length; build(); return cur.map(function(p){ return [p.lat, p.lng]; }); }
+  map.setView([36.87, 140.06], 12);   // 描く前に、まず表示位置を決める（決める前だと、地図の範囲が取れずにエラーになる）
+  var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05));
   zoomClass();
   fc.onchange = function(){ var p = draw(); if (p.length) map.fitBounds(L.latLngBounds(p).pad(0.1)); renderMiss(); };
 
