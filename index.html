@@ -32,10 +32,12 @@
   .warn{color:#e65100}
   .note{font-size:12px;color:#777;margin:18px 4px 0;line-height:1.6}
   #v2{display:none}
+  .adminbtn{display:none}
+  @media (min-width:900px){ .adminbtn{display:inline-block} }
 </style>
 </head>
 <body>
-<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ステーション地図</b></header>
+<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ステーション地図</b><button class="adminbtn" id="adm">⚙ 管理</button></header>
 <main>
   <div id="v1">
     <button class="allmap" id="allmap">🗺 全ステーションマップ<small>全コースのステーションを一枚の地図で見る／ピンのない場所を確認</small></button>
@@ -87,6 +89,11 @@
     var g = e.target.closest('[data-g]'); if (g) { location.hash = '#g=' + encodeURIComponent(g.getAttribute('data-g')); return; }
     var c = e.target.closest('[data-id]'); if (c) { location.href = 'course.html?c=' + encodeURIComponent(c.getAttribute('data-id')); }
   });
+  function openAdmin(){
+    fetch('http://127.0.0.1:8790/api/job', {mode:'no-cors'}).then(function(){ window.open('http://127.0.0.1:8790/', '_blank'); })
+      .catch(function(){ alert('管理ツールが起動していません。\n\n事務所PCで、作業フォルダの「ステーション地図 管理ツール」をダブルクリックして起動してから、もう一度押してください。\n（スマホ・タブレットでは使えません）'); });
+  }
+  document.getElementById('adm').onclick = openAdmin;
   document.getElementById('allmap').onclick = function(){ location.href = 'all.html'; };
   document.getElementById('back').onclick = function(){ location.hash = ''; };
   window.addEventListener('hashchange', route);

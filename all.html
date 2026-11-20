@@ -64,10 +64,12 @@
   .pp .chip{margin-top:3px}
   .adm{display:none;margin-top:8px;padding:6px 12px;border:2px solid #37474f;border-radius:8px;color:#37474f;font-size:13px;font-weight:bold;text-decoration:none}
   @media (min-width:900px){ .adm{display:inline-block} }
+  .adminbtn{display:none}
+  @media (min-width:900px){ #hd .adminbtn{display:inline-block} }
 </style>
 </head>
 <body>
-<div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b></div>
+<div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b><button class="adminbtn" id="adm">⚙ 管理</button></div>
 <div id="bar"><input id="sq" type="search" placeholder="🔍 ステーション検索" autocomplete="off"><button id="bAer">写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
 <div id="sub"></div>
 <div id="toast"></div>
@@ -220,6 +222,11 @@
   }
   $('bMiss').onclick = function(){ spanel.classList.remove('open'); sq.blur(); renderMiss(); panel.classList.add('open'); };
   $('pclose').onclick = function(){ panel.classList.remove('open'); };
+  function openAdmin(){
+    fetch('http://127.0.0.1:8790/api/job', {mode:'no-cors'}).then(function(){ window.open('http://127.0.0.1:8790/', '_blank'); })
+      .catch(function(){ alert('管理ツールが起動していません。\n\n事務所PCで、作業フォルダの「ステーション地図 管理ツール」をダブルクリックして起動してから、もう一度押してください。\n（スマホ・タブレットでは使えません）'); });
+  }
+  $('adm').onclick = openAdmin;
   $('back').onclick = function(){ location.href = 'index.html'; };
   map.on('click', function(){ panel.classList.remove('open'); spanel.classList.remove('open'); sq.blur(); clearHl(); });
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
