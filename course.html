@@ -39,6 +39,8 @@
   .lbl.now{display:block}
   .pin{background:var(--c);color:var(--ct);border:2px solid #fff;border-radius:50%;width:28px;height:28px;line-height:24px;text-align:center;font-size:12px;font-weight:bold;box-shadow:0 1px 4px rgba(0,0,0,.5)}
   .pin.done{background:#bdbdbd;opacity:.7}
+  .pin.new{background:#e53935;color:#fff}
+  .nw{display:inline-block;margin-left:6px;background:#e53935;color:#fff;border-radius:6px;padding:0 6px;font-size:11px;font-weight:bold;vertical-align:middle}
   .pin.sel{background:#e65100;transform:scale(1.35)}
   .z-small .pin{transform:scale(.72)}
   .z-small .pin.sel{transform:scale(1.1)}
@@ -165,6 +167,13 @@
     st.setProperty('--c', c); st.setProperty('--cl', 'rgba(' + r + ',' + g + ',' + b + ',.14)'); st.setProperty('--cd', 'rgb(' + k(r) + ',' + k(g) + ',' + k(b) + ')');
     document.title = C.name; var tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = c; })();
 
+  // ---- 新しく追加・修正された位置は、確認する（ピンをタップ／完了する）まで赤く表示。確認の記録は、この端末だけに保存 ----
+  var SEENKEY = 'gomi-map:seen', seen = {};
+  try { seen = JSON.parse(localStorage.getItem(SEENKEY) || '{}'); } catch(e) {}
+  function skey(s){ return s.st + '-' + String(s.map || '').split('-')[0]; }
+  function isNew(s){ return !!s.nw && !((seen[skey(s)] || 0) >= s.nw); }
+  function ack(s){ if (!isNew(s)) return false; seen[skey(s)] = s.nw; try { localStorage.setItem(SEENKEY, JSON.stringify(seen)); } catch(e) {} return true; }
+
   // ---- 進み具合（その日の分をスマホに保存）----
   var d0 = new Date(), ymd = d0.getFullYear() + '-' + ('0'+(d0.getMonth()+1)).slice(-2) + '-' + ('0'+d0.getDate()).slice(-2);
   var KEY = 'gomi-map:' + cid + ':' + ymd, done = {};
@@ -249,6 +258,7 @@
     var g = 'https://www.google.com/maps/search/?api=1&query=' + s.lat + ',' + s.lng;
     m.bindPopup('<div class="pop"><b>№' + s.no + '</b>　ST№' + s.st + '<br>地図: ' + s.map + '<br>' + esc(s.mark) +
       '<br><a class="main" href="#" data-idx="' + idx + '">ここを次にする</a><a class="sub" href="' + g + '" target="_blank">Googleマップで開く</a></div>');
+    m.on('click', function(){ if (ack(s)) render(false); });   // タップしたら、確認済み（通常の色に戻る）
     markers[idx] = m;
   });
   // 目標物（コンビニ・学校・お店など）
@@ -307,6 +317,7 @@
     S.forEach(function(s, i){
       var focus = showAll || (i >= cur && i <= cur + 4);
       var cls = i === cur ? 'sel' : (done[s.no] ? (showAll ? 'done' : 'dot done') : (focus ? '' : 'dot'));
+      if (cls === '' && isNew(s)) cls = 'new';   // 新しく追加・修正された位置は、赤
       markers[i].setIcon(pinIcon(s.no, cls));
       markers[i].setZIndexOffset(i === cur ? 800 : (focus ? 200 : 0));
       markers[i].unbindTooltip();
@@ -345,6 +356,7 @@
       var gaps = C.missing.filter(function(m){ return m.no > pn && m.no < s.no; }).map(function(m){ return '№' + m.no; });
       if (gaps.length) gapHtml = '<div class="gap">⚠ ' + gaps.slice(0, 4).join('・') + (gaps.length > 4 ? ' ほか' + (gaps.length - 4) + '件' : '') + ' は位置未登録（一覧の最後で確認）</div>';
     }
+    if (!fin && isNew(s)) gapHtml += '<div class="gap" style="color:#e53935">★ 新しく追加・修正された位置です（ピンをタップすると、通常の色に戻ります）</div>';
     document.getElementById('card').innerHTML =
       '<div class="c1"><div class="n">' + title + '</div><div class="t">' +
       (fin ? '<div class="mk">会社へ戻ります</div><div class="st">' + esc(COMPANY.address) + '</div>'
@@ -373,7 +385,7 @@
     toast('№' + s.no + (now ? ' を完了にしました' : ' の完了を取り消しました'));
   }
   function onDone(){
-    if (cur < S.length) { done[S[cur].no] = true; save(); var n = cur + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; render(true); }   // 完了済みの場所は飛ばす
+    if (cur < S.length) { ack(S[cur]); done[S[cur].no] = true; save(); var n = cur + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; render(true); }   // 完了済みの場所は飛ばす
     else { toast('お疲れさまでした。本日のコースは完了です'); }
   }
   function onBack(){
@@ -448,7 +460,7 @@
   function renderList(){
     var t = q.value.trim().toLowerCase();
     list.innerHTML = S.map(function(s, i){ return {s:s, i:i}; }).filter(function(o){ var s = o.s; return !t || (s.no+' '+s.st+' '+s.map+' '+s.mark).toLowerCase().indexOf(t) >= 0; }).map(function(o){
-      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div class="tx">ST' + s.st + '　' + esc(s.mark) + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div><button class="ck" data-ck="' + o.i + '" aria-label="完了">✓</button></div>';
+      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div class="tx">ST' + s.st + '　' + esc(s.mark) + (isNew(s) ? '<span class="nw">NEW</span>' : '') + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div><button class="ck" data-ck="' + o.i + '" aria-label="完了">✓</button></div>';
     }).join('') + missingRows(t);
   }
   // 地図にピンがないステーション（コース表にはあるが位置が未登録）。見落とし防止のため、一覧の最後に出す
