@@ -99,7 +99,8 @@
   });
   function zoomClass(){
     var z = map.getZoom(), c = map.getContainer().classList; c.toggle('z-small', z < 15); c.toggle('z-label', z >= 16); c.toggle('z-poi', z >= 16);
-    if (z >= 15) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
+    var fcv = document.getElementById('fc') && document.getElementById('fc').value;   // コースを選んだときだけ、目標物を出す（軽くするため）
+    if (z >= 15 && fcv) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
   }
   map.on('zoomend', zoomClass);
 
@@ -113,9 +114,9 @@
   function popupHtml(p){ return '<div class="pp"><b>ST' + esc(p.st) + '</b>　地図 ' + esc(p.map) + '<br>' + esc(norm(p.mark)) + '<br>' + chips(p.c) + '</div>'; }
   function build(){
     layer.clearLayers(); var z = map.getZoom();
-    if (z < 15) {
+    if (z < 15 || !fc.value) {   // 引いたとき、または「全コース」のときは、軽い丸だけ
       cur.forEach(function(p){
-        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : 5, color:p.a ? '#2e7d32' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
+        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : (z < 15 ? 5 : 8), color:p.a ? '#2e7d32' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
       });
     } else {
       var bd = map.getBounds().pad(0.3), n = 0;
@@ -133,7 +134,7 @@
   map.setView([36.87, 140.06], 12);   // 描く前に、まず表示位置を決める（決める前だと、地図の範囲が取れずにエラーになる）
   var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05));
   zoomClass();
-  fc.onchange = function(){ var p = draw(); if (p.length) map.fitBounds(L.latLngBounds(p).pad(0.1)); renderMiss(); };
+  fc.onchange = function(){ var p = draw(); if (p.length) map.fitBounds(L.latLngBounds(p).pad(0.1)); zoomClass(); renderMiss(); };
 
   // ---- 位置のないステーションの一覧 ----
   var panel = document.getElementById('panel');
