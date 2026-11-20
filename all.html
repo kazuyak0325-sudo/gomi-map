@@ -111,7 +111,7 @@
 
   // ---- 色別の絞り込み（画面の右側のボタン）----
   var fg = '', fcid = '', fs = '';   // fg: 色(グループ)  fcid: その中の日程(コース)  fs: 「全」のときの日程(月・木 など。色をまたぐ)
-  var SCHEDS = [['', 'すべて'], ['getsu', '月・木'], ['ka', '火・金'], ['pet13', 'ペット第1/第3'], ['pet24', 'ペット第2/第4']];
+  var SCHEDS = [['', 'すべて'], ['getsu', '月・木'], ['ka', '火・金']];
   function schedKey(c){ var s = c.sched; if (s.indexOf('月・木') >= 0) return 'getsu'; if (s.indexOf('火・金') >= 0) return 'ka'; if (s.indexOf('ペット') >= 0) return (/第2\/第4|②/.test(s)) ? 'pet24' : 'pet13'; return 'chiku'; }
   var GROUPS = [], availG = {}; ALL.courses.forEach(function(c){ if (GROUPS.indexOf(c.group) < 0) GROUPS.push(c.group); if (c.avail) availG[c.group] = true; });
   var gColor = {}; ALL.courses.forEach(function(c){ if (!gColor[c.group]) gColor[c.group] = c.color; });
