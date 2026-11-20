@@ -75,7 +75,7 @@
 <div id="toast"></div>
 <div id="rail"></div>
 <div id="map"></div>
-<div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。新しく追加・修正された位置は、赤いピンで出ます（タップすると、通常の色に戻ります）。</p><div id="plist"></div></div>
+<div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。新しく追加・修正された位置は、赤いピンで出ます（タップすると、通常の色に戻ります）。<br><button id="resetSeen" style="margin-top:6px;border:1px solid #e53935;background:#fff;color:#e53935;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:bold">赤い印をもう一度出す（確認済みの記録を消す）</button></p><div id="plist"></div></div>
 <div class="pnl" id="spanel"><div class="top"><b id="sh">検索結果</b><button id="sclose">閉じる</button></div><div id="slist"></div></div>
 <script src="lib/leaflet.js"></script>
 <script src="lib/maplibre-gl.js"></script>
@@ -229,6 +229,7 @@
     $('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div><a class="adm" target="_blank" href="http://127.0.0.1:8790/#k=' + encodeURIComponent(m.k) + '">📌 管理ツールでピンを置く</a></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
   }
   $('bMiss').onclick = function(){ spanel.classList.remove('open'); sq.blur(); renderMiss(); panel.classList.add('open'); };
+  $('resetSeen').onclick = function(){ if (!confirm('この端末の「確認済み」の記録を消して、新しく追加・修正された位置を、もう一度、赤く表示します。\n（コースの画面の赤い印も、同時に戻ります）\n\nよろしいですか？')) return; seen = {}; try { localStorage.removeItem(SEENKEY); } catch(e) {} build(); panel.classList.remove('open'); };
   $('pclose').onclick = function(){ panel.classList.remove('open'); };
   function openAdmin(){
     fetch('http://127.0.0.1:8790/api/job', {mode:'no-cors'}).then(function(){ window.open('http://127.0.0.1:8790/', '_blank'); })
