@@ -75,7 +75,7 @@
 <div id="toast"></div>
 <div id="rail"></div>
 <div id="map"></div>
-<div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。</p><div id="plist"></div></div>
+<div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。新しく追加・修正された位置は、赤いピンで出ます（タップすると、通常の色に戻ります）。</p><div id="plist"></div></div>
 <div class="pnl" id="spanel"><div class="top"><b id="sh">検索結果</b><button id="sclose">閉じる</button></div><div id="slist"></div></div>
 <script src="lib/leaflet.js"></script>
 <script src="lib/maplibre-gl.js"></script>
@@ -88,6 +88,11 @@
   if (typeof ALL === 'undefined') { location.replace('index.html'); return; }
   var CB = {}; ALL.courses.forEach(function(c){ CB[c.id] = c; });
   function $(id){ return document.getElementById(id); }
+  // 新しく追加・修正された位置は、確認する（ピンをタップする）まで赤く表示。確認の記録は、コース画面と共通（この端末だけに保存）
+  var SEENKEY = 'gomi-map:seen', seen = {};
+  try { seen = JSON.parse(localStorage.getItem(SEENKEY) || '{}'); } catch(e) {}
+  function isNew(p){ return !!p.nw && !((seen[p.k] || 0) >= p.nw); }
+  function ack(p){ if (!isNew(p)) return false; seen[p.k] = p.nw; try { localStorage.setItem(SEENKEY, JSON.stringify(seen)); } catch(e) {} return true; }
   function toast(t){ var d = $('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, 3000); }
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function norm(t){ try { return String(t || '').normalize('NFKC'); } catch(e) { return t || ''; } }
@@ -160,19 +165,22 @@
   // 軽くするため：引いたとき、または色を選んでいないときは、軽い丸だけ。色を選んで拡大したときは、見える範囲のピンだけを、番号・名前つきで描く
   var layer = L.layerGroup().addTo(map), cur = [], canvas = L.canvas({padding:.5});
   function popupHtml(p){ return '<div class="pp"><b>ST' + esc(p.st) + '</b>　地図 ' + esc(p.map) + '<br>' + esc(norm(p.mark)) + '<br>' + chips(p.c) + '</div>'; }
+  function circleStyle(p, z){ var red = p.a || isNew(p); return {renderer:canvas, radius:(z < 13 ? 3 : (z < 15 ? 5 : 8)) + (red ? 2 : 0), color:red ? '#b71c1c' : '#fff', weight:red ? 3 : 1.5, fillColor:red ? '#e53935' : courseOf(p).color, fillOpacity:.95}; }
+  function iconFor(p){ var c = courseOf(p), red = p.a || isNew(p), fs = String(p.st).length >= 4 ? 8 : 10; return L.divIcon({className:'', html:'<div class="sp' + (red ? ' add' : '') + '" style="background:' + (red ? '#e53935' : c.color) + ';color:' + (red ? '#fff' : (isLight(c.color) ? '#222' : '#fff')) + ';font-size:' + fs + 'px">' + esc(p.st) + '</div>', iconSize:[26,26], iconAnchor:[13,13]}); }
   function build(){
     layer.clearLayers(); var z = map.getZoom();
     if (z < 15 || !active()) {
       cur.forEach(function(p){
-        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : (z < 15 ? 5 : 8), color:p.a ? '#e53935' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
+        var m = L.circleMarker([p.lat, p.lng], circleStyle(p, z)).bindPopup(popupHtml(p)).addTo(layer);
+        m.on('click', function(){ if (ack(p)) m.setStyle(circleStyle(p, map.getZoom())); });   // タップしたら、確認済み（通常の色に戻る）
       });
     } else {
       var bd = map.getBounds().pad(0.3), n = 0;
       for (var i = 0; i < cur.length && n < 500; i++) {
         var p = cur[i]; if (!bd.contains([p.lat, p.lng])) continue; n++;
-        var c = courseOf(p), fs = String(p.st).length >= 4 ? 8 : 10;
-        var m = L.marker([p.lat, p.lng], {icon:L.divIcon({className:'', html:'<div class="sp' + (p.a ? ' add' : '') + '" style="background:' + c.color + ';color:' + (isLight(c.color) ? '#222' : '#fff') + ';font-size:' + fs + 'px">' + esc(p.st) + '</div>', iconSize:[26,26], iconAnchor:[13,13]})}).addTo(layer);
+        var m = L.marker([p.lat, p.lng], {icon:iconFor(p)}).addTo(layer);
         m.bindPopup(popupHtml(p));
+        (function(p, m){ m.on('click', function(){ if (ack(p)) m.setIcon(iconFor(p)); }); })(p, m);
         if (p.mark) m.bindTooltip(esc(norm(p.mark)), {permanent:true, direction:'right', offset:[16,0], className:'lbl'});
       }
     }
@@ -207,7 +215,7 @@
   sq.onfocus = function(){ openS(); doSearch(); };
   slist.onclick = function(e){
     var r = e.target.closest('.tap'); if (!r) return; var x = sres[+r.getAttribute('data-i')]; if (!x || !x.pin) return; var p = x.p;
-    spanel.classList.remove('open'); sq.blur(); clearHl();
+    spanel.classList.remove('open'); sq.blur(); clearHl(); ack(p);
     hl = L.circleMarker([p.lat, p.lng], {radius:16, color:'#e65100', weight:4, fillColor:'#fff', fillOpacity:.25}).addTo(map).bindPopup(popupHtml(p));
     map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17)); hl.openPopup();
   };
