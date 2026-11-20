@@ -14,18 +14,18 @@
 <style>
   :root{--c:#4b2e83;--cl:rgba(75,46,131,.14);--cd:#2f1c54;--ct:#fff;--cx:#4b2e83}
   html,body{margin:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#fff;-webkit-text-size-adjust:100%}
-  #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:var(--c);color:var(--ct);padding:calc(env(safe-area-inset-top) + 13px) 14px 13px;display:flex;align-items:center;gap:8px}
-  #hd b{flex:1;min-width:0;text-align:center;font-size:14px;line-height:1.2;word-break:keep-all;overflow-wrap:anywhere}
+  #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:var(--c);color:var(--ct);padding:calc(env(safe-area-inset-top) + 7px) 14px 7px;min-height:31px;display:flex;align-items:center;gap:8px}
+  #hd b{flex:1;min-width:0;text-align:center;font-size:13px;line-height:1.12;word-break:keep-all;overflow-wrap:anywhere}
   #hd #bHome .bl{display:none}
-  #hd #bHome{padding:7px 11px}
-  #hd button{background:#fff;color:var(--cx);border:0;border-radius:18px;padding:7px 14px;font-size:15px;font-weight:bold;white-space:nowrap}
-  #menu{display:none;position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 72px);z-index:1070;background:#fff;border-radius:12px;box-shadow:0 3px 14px rgba(0,0,0,.4);padding:8px;min-width:210px}
+  #hd #bHome{padding:5px 12px}
+  #hd button{background:#fff;color:var(--cx);border:0;border-radius:18px;padding:5px 14px;font-size:15px;font-weight:bold;white-space:nowrap}
+  #menu{display:none;position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 52px);z-index:1070;background:#fff;border-radius:12px;box-shadow:0 3px 14px rgba(0,0,0,.4);padding:8px;min-width:210px}
   #menu.open{display:block}
   #menu .mh{font-size:12px;color:#777;padding:6px 8px 2px}
   #menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:11px 10px;font-size:16px;border-radius:8px;color:#222}
   #menu button.sel{background:var(--cl);color:var(--cd);font-weight:bold}
   #map{position:absolute;top:0;bottom:0;left:0;right:0}
-  .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 68px)}
+  .leaflet-top{margin-top:calc(env(safe-area-inset-top) + 50px)}
   .leaflet-container{background:#faeee0}   /* 地図の背景（薄い肌色） */
   .gray-tiles,.maplibregl-canvas{filter:grayscale(1) contrast(.9) brightness(1.08)}
   .maplibregl-canvas{position:absolute;left:0;top:0}
@@ -76,7 +76,7 @@
   #steps.open{display:block}
   #steps div{padding:7px 0;border-bottom:1px solid #eee}
   #steps b{color:#e65100}
-  #sheet{position:absolute;left:0;right:auto;bottom:0;top:calc(env(safe-area-inset-top) + 64px);width:min(88%,380px);z-index:1100;background:#fff;border-radius:0 14px 0 0;box-shadow:3px 0 14px rgba(0,0,0,.4);display:none;flex-direction:column;padding-left:env(safe-area-inset-left)}   /* 一覧は左から出す */
+  #sheet{position:absolute;left:0;right:auto;bottom:0;top:calc(env(safe-area-inset-top) + 45px);width:min(88%,380px);z-index:1100;background:#fff;border-radius:0 14px 0 0;box-shadow:3px 0 14px rgba(0,0,0,.4);display:none;flex-direction:column;padding-left:env(safe-area-inset-left)}   /* 一覧は左から出す */
   #sheet.open{display:flex}
   #sheet .top{padding:10px 12px;display:flex;gap:8px;border-bottom:1px solid #ddd}
   #sheet input{flex:1;min-width:0;font-size:16px;padding:6px 8px;border:1px solid #bbb;border-radius:6px}
@@ -118,7 +118,7 @@
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
-  #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 76px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
+  #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 56px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
 
   #card .gap{font-size:13px;font-weight:bold;color:#e65100;margin-top:3px}
   .mh2{padding:9px 12px;background:#fff3e0;color:#e65100;font-size:13px;font-weight:bold}
@@ -290,7 +290,7 @@
     for (var k = a; k <= b - 1; k++) { pts = pts.concat(LG[k].l); km += LG[k].km; mn += LG[k].min; }
     rangeLine = L.featureGroup([L.polyline(pts, {color:'#fff', weight:12, opacity:.95}), L.polyline(pts, {color:'#00897b', weight:7, opacity:1})]).addTo(map);
     bLine.classList.add('on');
-    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,130], paddingBottomRight:padBR(), maxZoom:17});
+    map.fitBounds(rangeLine.getBounds(), {paddingTopLeft:[30,110], paddingBottomRight:padBR(), maxZoom:17});
     toast('№' + a + '→№' + b + '　約' + km.toFixed(1) + 'km・走行のみ約' + mn + '分');
     rng.style.display = 'none';
   };
@@ -325,7 +325,7 @@
     if (leg) legLine = L.featureGroup([L.polyline(leg.l, {color:'#fff', weight:13, opacity:.95}), L.polyline(leg.l, {color:'#2f3fe0', weight:8, opacity:1})]).addTo(map);
     else legLine = L.featureGroup([L.polyline([from, to], {color:'#2f3fe0', weight:5, dashArray:'8,8'})]).addTo(map);
     if (fit && !following) {
-      if (!viewFixed) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,90], paddingBottomRight:padBR(), maxZoom:17}); viewFixed = true; }   // 最初の1回だけ区間全体に合わせる
+      if (!viewFixed) { var b = legLine.getBounds(); if (lastPos) b.extend(lastPos); map.fitBounds(b, {paddingTopLeft:[30,70], paddingBottomRight:padBR(), maxZoom:17}); viewFixed = true; }   // 最初の1回だけ区間全体に合わせる
       else centerOn(to);   // 以降は拡大率を変えず、次の目的地へ地図を動かす
     }
 
