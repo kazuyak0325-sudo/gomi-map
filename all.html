@@ -38,7 +38,7 @@
   .maplibregl-canvas{position:absolute;left:0;top:0}
   .leaflet-maplibre-gl-container{pointer-events:none}
   .sp{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:bold;line-height:1;letter-spacing:-.3px}
-  .sp.add{box-shadow:0 0 0 3px #2e7d32,0 1px 4px rgba(0,0,0,.5)}
+  .sp.add{box-shadow:0 0 0 3px #e53935,0 1px 4px rgba(0,0,0,.5)}
   .z-small .sp{transform:scale(.62)}
   .lbl{display:none;background:none;border:0;box-shadow:none;color:#222;font-weight:bold;font-size:12px;padding:0;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff}
   .lbl:before{display:none}
@@ -164,7 +164,7 @@
     layer.clearLayers(); var z = map.getZoom();
     if (z < 15 || !active()) {
       cur.forEach(function(p){
-        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : (z < 15 ? 5 : 8), color:p.a ? '#2e7d32' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
+        L.circleMarker([p.lat, p.lng], {renderer:canvas, radius:z < 13 ? 3 : (z < 15 ? 5 : 8), color:p.a ? '#e53935' : '#fff', weight:p.a ? 3 : 1.5, fillColor:courseOf(p).color, fillOpacity:.95}).bindPopup(popupHtml(p)).addTo(layer);
       });
     } else {
       var bd = map.getBounds().pad(0.3), n = 0;
