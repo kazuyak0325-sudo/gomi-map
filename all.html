@@ -110,12 +110,14 @@
   L.control.zoom({position:'bottomright'}).addTo(map);
 
   // ---- 色別の絞り込み（画面の右側のボタン）----
-  var fg = '', fcid = '';   // fg: 色(グループ)  fcid: その中の日程(コース)
+  var fg = '', fcid = '', fs = '';   // fg: 色(グループ)  fcid: その中の日程(コース)  fs: 「全」のときの日程(月・木 など。色をまたぐ)
+  var SCHEDS = [['', 'すべて'], ['getsu', '月・木'], ['ka', '火・金'], ['pet13', 'ペット第1/第3'], ['pet24', 'ペット第2/第4']];
+  function schedKey(c){ var s = c.sched; if (s.indexOf('月・木') >= 0) return 'getsu'; if (s.indexOf('火・金') >= 0) return 'ka'; if (s.indexOf('ペット') >= 0) return (/第2\/第4|②/.test(s)) ? 'pet24' : 'pet13'; return 'chiku'; }
   var GROUPS = [], availG = {}; ALL.courses.forEach(function(c){ if (GROUPS.indexOf(c.group) < 0) GROUPS.push(c.group); if (c.avail) availG[c.group] = true; });
   var gColor = {}; ALL.courses.forEach(function(c){ if (!gColor[c.group]) gColor[c.group] = c.color; });
-  function active(){ return !!(fg || fcid); }
-  function inCourse(o){ if (fcid) return o.c.indexOf(fcid) >= 0; if (fg) return o.c.some(function(id){ return CB[id].group === fg; }); return true; }
-  function courseOf(p){ if (fcid && p.c.indexOf(fcid) >= 0) return CB[fcid]; if (fg) { var m = p.c.filter(function(id){ return CB[id].group === fg; })[0]; if (m) return CB[m]; } return CB[p.c[0]]; }
+  function active(){ return !!(fg || fcid || fs); }
+  function inCourse(o){ if (fcid) return o.c.indexOf(fcid) >= 0; if (fg) return o.c.some(function(id){ return CB[id].group === fg; }); if (fs) return o.c.some(function(id){ return schedKey(CB[id]) === fs; }); return true; }
+  function courseOf(p){ if (fcid && p.c.indexOf(fcid) >= 0) return CB[fcid]; if (fg) { var m = p.c.filter(function(id){ return CB[id].group === fg; })[0]; if (m) return CB[m]; } else if (fs) { var m2 = p.c.filter(function(id){ return schedKey(CB[id]) === fs; })[0]; if (m2) return CB[m2]; } return CB[p.c[0]]; }
   function shortName(g){ return g.indexOf('容プラ') === 0 ? '容' + g.replace('容プラ(', '').replace(')', '') : (g === 'ピンク' ? 'ピ' : g); }
   function buildRail(){
     var html = '<button class="all' + (!fg ? ' on' : '') + '" data-g="" style="background:#37474f">全</button><div class="sep"></div>';
@@ -126,12 +128,17 @@
     $('rail').innerHTML = html;
   }
   function buildSub(){
-    var el = $('sub'); if (!fg) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    var el = $('sub');
+    if (!fg) {   // 「全」のとき：色をまたいで、日程で切り替える
+      el.style.cssText = 'display:flex;--g:#37474f;--gt:#fff';
+      el.innerHTML = SCHEDS.map(function(s){ return '<button class="' + (fs === s[0] ? 'on' : '') + '" data-s="' + s[0] + '">' + esc(s[1]) + '</button>'; }).join('');
+      return;
+    }
     var col = gColor[fg]; el.style.cssText = 'display:flex;--g:' + col + ';--gt:' + (isLight(col) ? '#222' : '#fff');
     el.innerHTML = '<button class="' + (!fcid ? 'on' : '') + '" data-c="">すべて</button>' + ALL.courses.filter(function(c){ return c.avail && c.group === fg; }).map(function(c){ return '<button class="' + (fcid === c.id ? 'on' : '') + '" data-c="' + esc(c.id) + '">' + esc(c.sched.replace('ペット・ダンボール', 'ペット')) + '</button>'; }).join('');
   }
   $('rail').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; if (b.classList.contains('off')) { toast(b.getAttribute('data-g') + 'は、マイマップのピン待ちです（準備中）'); return; } fg = b.getAttribute('data-g'); fcid = ''; applyFilter(); };
-  $('sub').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; fcid = b.getAttribute('data-c'); applyFilter(); };
+  $('sub').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-s')) { fs = b.getAttribute('data-s'); } else { fcid = b.getAttribute('data-c'); } applyFilter(); };
 
   // ---- 目標物（コンビニ・学校・お店など）：色を選んだときだけ、拡大したときに表示 ----
   var poiLayer = L.layerGroup();
@@ -172,7 +179,7 @@
   function draw(){ cur = ALL.pins.filter(inCourse); $('nm').textContent = ALL.missing.filter(inCourse).length; build(); return cur.map(function(p){ return [p.lat, p.lng]; }); }
   function applyFilter(){ buildRail(); buildSub(); var p = draw(); if (p.length) map.fitBounds(L.latLngBounds(p).pad(0.1)); zoomClass(); clearHl(); }
   map.setView([36.87, 140.06], 12);   // 描く前に、まず表示位置を決める（決める前だと、地図の範囲が取れずにエラーになる）
-  buildRail(); var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05));
+  buildRail(); buildSub(); var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05));
   zoomClass();
 
   // ---- ステーション検索（上のバーの入力欄。ST№・目標物・地図ページ。位置のないステーションも出す）----
