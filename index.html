@@ -39,7 +39,6 @@
 <main>
   <div id="v1">
     <button class="allmap" id="allmap">🗺 全ステーションマップ<small>全コースのステーションを一枚の地図で見る／ピンのない場所を確認</small></button>
-    <div id="lastWrap"></div>
     <h2>可燃・ペット・ダンボール（色コース）</h2>
     <div class="grid" id="colors"></div>
     <h2>容プラ</h2>
@@ -92,11 +91,6 @@
   document.getElementById('back').onclick = function(){ location.hash = ''; };
   window.addEventListener('hashchange', route);
 
-  // 前回のコース
-  try {
-    var last = localStorage.getItem('gomi-map:last'), lc = last && L.filter(function(c){ return c.id === last && c.avail; })[0];
-    if (lc) document.getElementById('lastWrap').innerHTML = '<button class="last" data-id="' + esc(lc.id) + '" style="border-left:10px solid ' + lc.color + '"><small>前回のコース</small><b>' + esc(lc.name) + '</b></button>';
-  } catch(e) {}
   route();
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
