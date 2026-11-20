@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#37474f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>全ステーションマップ</title>
+<link rel="stylesheet" href="lib/leaflet.css">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#f4f1ea}
+  #hd{position:absolute;top:0;left:0;right:0;z-index:1000;background:#37474f;color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;align-items:center;gap:8px}
+  #hd b{flex:1;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hd button{background:#fff;color:#37474f;border:0;border-radius:18px;padding:7px 14px;font-size:15px;font-weight:bold;white-space:nowrap}
+  #bar{position:absolute;top:calc(env(safe-area-inset-top) + 56px);left:0;right:0;z-index:999;background:rgba(255,255,255,.96);padding:8px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+  #bar select{flex:1;min-width:0;font-size:16px;padding:7px;border:1px solid #bbb;border-radius:8px;background:#fff}
+  #bar button{border:0;border-radius:8px;padding:9px 12px;font-size:14px;font-weight:bold;background:#fff3e0;color:#e65100;white-space:nowrap}
+  #map{position:absolute;top:0;bottom:0;left:0;right:0}
+  #panel{position:absolute;z-index:1100;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + 108px);background:#fff;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.4);display:none;flex-direction:column}
+  #panel.open{display:flex}
+  #panel .top{padding:10px 14px;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:8px}
+  #panel .top b{flex:1;font-size:15px;color:#e65100}
+  #panel .top button{border:0;background:#eee;border-radius:8px;padding:8px 14px;font-size:14px}
+  #panel p{margin:0;padding:8px 14px;font-size:12px;color:#666;background:#faf6ee}
+  #plist{flex:1;overflow:auto}
+  .r{padding:10px 14px;border-bottom:1px solid #eee}
+  .r .h{font-weight:bold;font-size:16px}
+  .r .m{color:#444;font-size:14px;margin-top:2px}
+  .chip{display:inline-block;margin:4px 4px 0 0;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;white-space:nowrap}
+  .pp .chip{margin-top:3px}
+</style>
+</head>
+<body>
+<div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b></div>
+<div id="bar"><select id="fc"></select><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
+<div id="map"></div>
+<div id="panel"><div class="top"><b id="ph"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。</p><div id="plist"></div></div>
+<script src="lib/leaflet.js"></script>
+<script>document.write('<script src="all.js?t=' + Date.now() + '"><\/script>');</script>
+<script>
+(function(){
+  if (typeof ALL === 'undefined') { location.replace('index.html'); return; }
+  var CB = {}; ALL.courses.forEach(function(c){ CB[c.id] = c; });
+  function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function norm(t){ try { return String(t || '').normalize('NFKC'); } catch(e) { return t || ''; } }
+  function isLight(c){ var r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16); return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.62; }
+  function chips(ids){ return ids.map(function(id){ var c = CB[id]; return '<span class="chip" style="background:' + c.color + ';color:' + (isLight(c.color) ? '#222' : '#fff') + '">' + esc(c.group.replace('容プラ', '容') + ' ' + c.sched.replace('ペット・ダンボール', 'ペット')) + '</span>'; }).join(''); }
+
+  var map = L.map('map', {zoomControl:false});
+  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:18, attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>'}).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  var layer = L.layerGroup().addTo(map), fc = document.getElementById('fc');
+  fc.innerHTML = '<option value="">全コース（利用可 ' + ALL.courses.filter(function(c){ return c.avail; }).length + '）</option>' + ALL.courses.filter(function(c){ return c.avail; }).map(function(c){ return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('');
+
+  function inCourse(o){ return !fc.value || o.c.indexOf(fc.value) >= 0; }
+  function draw(){
+    layer.clearLayers(); var pts = [];
+    ALL.pins.filter(inCourse).forEach(function(p){
+      var first = CB[(fc.value && p.c.indexOf(fc.value) >= 0) ? fc.value : p.c[0]];
+      var m = L.circleMarker([p.lat, p.lng], {radius:p.a ? 8 : 6, color:p.a ? '#2e7d32' : '#fff', weight:p.a ? 3 : 1.5, fillColor:first.color, fillOpacity:.95}).addTo(layer);
+      m.bindPopup('<div class="pp"><b>ST' + esc(p.st) + '</b>　地図 ' + esc(p.map) + '<br>' + esc(norm(p.mark)) + '<br>' + chips(p.c) + '</div>');
+      pts.push([p.lat, p.lng]);
+    });
+    var miss = ALL.missing.filter(inCourse); document.getElementById('nm').textContent = miss.length;
+    return pts;
+  }
+  var pts = draw(); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05)); else map.setView([36.87, 140.06], 12);
+  fc.onchange = function(){ var p = draw(); if (p.length) map.fitBounds(L.latLngBounds(p).pad(0.1)); renderMiss(); };
+
+  var panel = document.getElementById('panel');
+  function renderMiss(){
+    var miss = ALL.missing.filter(inCourse).sort(function(a, b){ return b.c.length - a.c.length || (+a.st) - (+b.st); });
+    document.getElementById('ph').textContent = '⚠ 位置のないステーション ' + miss.length + '種類（地図には出ません）';
+    document.getElementById('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
+  }
+  document.getElementById('bMiss').onclick = function(){ renderMiss(); panel.classList.add('open'); };
+  document.getElementById('pclose').onclick = function(){ panel.classList.remove('open'); };
+  document.getElementById('back').onclick = function(){ location.href = 'index.html'; };
+  map.on('click', function(){ panel.classList.remove('open'); });
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
