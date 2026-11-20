@@ -19,6 +19,11 @@
   #bar{position:absolute;top:calc(env(safe-area-inset-top) + 52px);left:0;right:0;z-index:999;background:rgba(255,255,255,.96);padding:8px 10px;display:flex;gap:7px;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
   #bar input{flex:1;min-width:0;font-size:16px;padding:8px 10px;border:1px solid #90a4ae;border-radius:8px;background:#fff}
   #bar button{border:0;border-radius:8px;padding:9px 10px;font-size:13px;font-weight:bold;background:#fff3e0;color:#e65100;white-space:nowrap}
+  #bar button#bNew{background:#e53935;color:#fff}
+  #bar button#bNew.zero{background:#eceff1;color:#90a4ae}
+  #nlist{flex:1;overflow:auto}
+  .tag.red{background:#ffebee;color:#c62828}
+  .tag.gray{background:#eceff1;color:#607d8b}
   #bar button#bAer{background:#eceff1;color:#37474f}
   #map{position:absolute;top:0;bottom:0;left:0;right:0}
   /* 色別ボタン（画面の右側） */
@@ -70,13 +75,14 @@
 </head>
 <body>
 <div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b><button class="adminbtn" id="adm">⚙ 管理</button></div>
-<div id="bar"><input id="sq" type="search" placeholder="🔍 ステーション検索" autocomplete="off"><button id="bAer">写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
+<div id="bar"><input id="sq" type="search" placeholder="🔍 ステーション検索" autocomplete="off"><button id="bNew">NEW <span id="nn">0</span></button><button id="bAer">写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
 <div id="sub"></div>
 <div id="toast"></div>
 <div id="rail"></div>
 <div id="map"></div>
 <div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。新しく追加・修正された位置は、赤いピンで出ます（タップすると、通常の色に戻ります）。<br><button id="resetSeen" style="margin-top:6px;border:1px solid #e53935;background:#fff;color:#e53935;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:bold">赤い印をもう一度出す（確認済みの記録を消す）</button></p><div id="plist"></div></div>
 <div class="pnl" id="spanel"><div class="top"><b id="sh">検索結果</b><button id="sclose">閉じる</button></div><div id="slist"></div></div>
+<div class="pnl" id="npanel"><div class="top"><b id="nh" style="color:#e53935">NEW</b><button id="nclose">閉じる</button></div><p>管理ツールで追加・修正された位置の一覧です。押すと、その場所を地図で表示します（確認済みになります）。</p><div id="nlist"></div></div>
 <script src="lib/leaflet.js"></script>
 <script src="lib/maplibre-gl.js"></script>
 <script src="lib/leaflet-maplibre-gl.js"></script>
@@ -92,7 +98,7 @@
   var SEENKEY = 'gomi-map:seen', seen = {};
   try { seen = JSON.parse(localStorage.getItem(SEENKEY) || '{}'); } catch(e) {}
   function isNew(p){ return !!p.nw && !((seen[p.k] || 0) >= p.nw); }
-  function ack(p){ if (!isNew(p)) return false; seen[p.k] = p.nw; try { localStorage.setItem(SEENKEY, JSON.stringify(seen)); } catch(e) {} return true; }
+  function ack(p){ if (!isNew(p)) return false; seen[p.k] = p.nw; try { localStorage.setItem(SEENKEY, JSON.stringify(seen)); } catch(e) {} try { updNew(); } catch(e) {} return true; }
   function toast(t){ var d = $('toast'); d.textContent = t; d.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function(){ d.style.display = 'none'; }, 3000); }
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function norm(t){ try { return String(t || '').normalize('NFKC'); } catch(e) { return t || ''; } }
@@ -197,7 +203,7 @@
   var INDEX = ALL.pins.map(function(p){ return {p:p, pin:true, t:norm(p.st + ' ' + p.map + ' ' + p.mark).toLowerCase()}; })
     .concat(ALL.missing.map(function(m){ return {p:m, pin:false, t:norm(m.st + ' ' + m.map + ' ' + m.mark).toLowerCase()}; }));
   function clearHl(){ if (hl) { map.removeLayer(hl); hl = null; } }
-  function openS(){ $('panel').classList.remove('open'); spanel.classList.add('open'); }
+  function openS(){ $('panel').classList.remove('open'); $('npanel').classList.remove('open'); spanel.classList.add('open'); }
   function doSearch(){
     var q = norm(sq.value).toLowerCase().trim();
     if (!q) { sres = []; $('sh').textContent = 'ステーション検索'; slist.innerHTML = '<div class="r" style="color:#666;font-size:14px;line-height:1.7">ST№（例：782）、目標物（例：公民館）、地図ページ（例：69-B）で探せます。<br>言葉を空白で区切ると、絞り込めます（例：公民館 69）。</div>'; return; }
@@ -213,12 +219,32 @@
   }
   sq.oninput = function(){ openS(); doSearch(); };
   sq.onfocus = function(){ openS(); doSearch(); };
-  slist.onclick = function(e){
-    var r = e.target.closest('.tap'); if (!r) return; var x = sres[+r.getAttribute('data-i')]; if (!x || !x.pin) return; var p = x.p;
-    spanel.classList.remove('open'); sq.blur(); clearHl(); ack(p);
+  // ピンを地図で表示する（検索結果・NEWの一覧から共通）。表示したら確認済みにする
+  var npanel = $('npanel');
+  function showPin(p){
+    spanel.classList.remove('open'); npanel.classList.remove('open'); sq.blur(); clearHl(); ack(p);
     hl = L.circleMarker([p.lat, p.lng], {radius:16, color:'#e65100', weight:4, fillColor:'#fff', fillOpacity:.25}).addTo(map).bindPopup(popupHtml(p));
     map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17)); hl.openPopup();
+  }
+  slist.onclick = function(e){
+    var r = e.target.closest('.tap'); if (!r) return; var x = sres[+r.getAttribute('data-i')]; if (!x || !x.pin) return; showPin(x.p);
   };
+  // ---- NEW：追加・修正された位置の一覧 ----
+  var nres = [];
+  function newList(){ return ALL.pins.filter(function(p){ return p.nw; }).sort(function(a, b){ return b.nw - a.nw; }); }
+  function updNew(){ var u = newList().filter(isNew).length; $('nn').textContent = u; $('bNew').classList.toggle('zero', !u); }
+  function renderNew(){
+    nres = newList(); var u = nres.filter(isNew).length;
+    $('nh').textContent = 'NEW　追加・修正された位置 ' + nres.length + '件（未確認 ' + u + '件）';
+    $('nlist').innerHTML = nres.length ? nres.map(function(p, i){
+      var d = new Date(p.nw * 1000), ds = (d.getMonth() + 1) + '/' + d.getDate();
+      return '<div class="r tap" data-i="' + i + '"><div class="h">ST' + esc(p.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(p.map) + '</span><span class="tag ' + (isNew(p) ? 'red">未確認' : 'gray">確認済み') + '</span></div><div class="m">' + esc(norm(p.mark)) + '　<span style="color:#888;font-size:12px">' + ds + '</span></div><div>' + chips(p.c) + '</div></div>';
+    }).join('') : '<div class="r" style="color:#666">まだ、追加・修正された位置は、ありません。</div>';
+  }
+  $('nlist').onclick = function(e){ var r = e.target.closest('.tap'); if (!r) return; var p = nres[+r.getAttribute('data-i')]; if (p) showPin(p); };
+  $('bNew').onclick = function(){ spanel.classList.remove('open'); $('panel').classList.remove('open'); sq.blur(); renderNew(); npanel.classList.add('open'); };
+  $('nclose').onclick = function(){ npanel.classList.remove('open'); };
+  updNew();
   $('sclose').onclick = function(){ spanel.classList.remove('open'); sq.blur(); };
 
   // ---- 位置のないステーションの一覧 ----
@@ -228,8 +254,8 @@
     $('ph').textContent = '⚠ 位置のないステーション ' + miss.length + '種類（地図には出ません）';
     $('plist').innerHTML = miss.length ? miss.map(function(m){ return '<div class="r"><div class="h">ST' + esc(m.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(m.map) + '</span></div><div class="m">' + esc(norm(m.mark)) + '</div><div>' + chips(m.c) + '</div><a class="adm" target="_blank" href="http://127.0.0.1:8790/#k=' + encodeURIComponent(m.k) + '">📌 管理ツールでピンを置く</a></div>'; }).join('') : '<div class="r" style="color:#2e7d32;font-weight:bold">位置のないステーションは、ありません</div>';
   }
-  $('bMiss').onclick = function(){ spanel.classList.remove('open'); sq.blur(); renderMiss(); panel.classList.add('open'); };
-  $('resetSeen').onclick = function(){ if (!confirm('この端末の「確認済み」の記録を消して、新しく追加・修正された位置を、もう一度、赤く表示します。\n（コースの画面の赤い印も、同時に戻ります）\n\nよろしいですか？')) return; seen = {}; try { localStorage.removeItem(SEENKEY); } catch(e) {} build(); panel.classList.remove('open'); };
+  $('bMiss').onclick = function(){ spanel.classList.remove('open'); $('npanel').classList.remove('open'); sq.blur(); renderMiss(); panel.classList.add('open'); };
+  $('resetSeen').onclick = function(){ if (!confirm('この端末の「確認済み」の記録を消して、新しく追加・修正された位置を、もう一度、赤く表示します。\n（コースの画面の赤い印も、同時に戻ります）\n\nよろしいですか？')) return; seen = {}; try { localStorage.removeItem(SEENKEY); } catch(e) {} updNew(); build(); panel.classList.remove('open'); };
   $('pclose').onclick = function(){ panel.classList.remove('open'); };
   function openAdmin(){
     fetch('http://127.0.0.1:8790/api/job', {mode:'no-cors'}).then(function(){ window.open('http://127.0.0.1:8790/', '_blank'); })
@@ -237,7 +263,7 @@
   }
   $('adm').onclick = openAdmin;
   $('back').onclick = function(){ location.href = 'index.html'; };
-  map.on('click', function(){ panel.classList.remove('open'); spanel.classList.remove('open'); sq.blur(); clearHl(); });
+  map.on('click', function(){ panel.classList.remove('open'); spanel.classList.remove('open'); npanel.classList.remove('open'); sq.blur(); clearHl(); });
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
 </script>
