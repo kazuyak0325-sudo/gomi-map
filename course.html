@@ -172,9 +172,9 @@
   var prevIdx = cur - 1;      // 直前に完了した位置（-1は会社から）。cur-1 と違うときは「順番どおりでない移動」
 
   // ---- 地図 ----
-  var map = L.map('map', {zoomControl:false}); window.gomiMap = map;
+  var map = L.map('map', {zoomControl:false, maxZoom:21}); window.gomiMap = map;
   var attr = '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>';
-  var pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr, className:'gray-tiles'});
+  var pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:21, maxNativeZoom:18, attribution:attr, className:'gray-tiles'});
   // 記号・文字なしのシンプル地図（道路・川・水面・鉄道のみ）。使えない端末では「見やすい地図」に自動で切り替え
   var simple = null;
   try {
@@ -185,8 +185,8 @@
     }
   } catch(e) { simple = null; }
   (simple || pale).addTo(map);
-  var std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {maxZoom:18, attribution:attr, className:'gray-tiles'});
-  var photo = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {maxZoom:18, attribution:attr});
+  var std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {maxZoom:21, maxNativeZoom:18, attribution:attr, className:'gray-tiles'});
+  var photo = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {maxZoom:21, maxNativeZoom:18, attribution:attr});
   // 地図の種類は、右上の「メニュー」から切り替える
   var baseDefs = []; if (simple) baseDefs.push(['シンプル（記号なし）', simple]);
   baseDefs.push(['見やすい地図', pale], ['標準の地図', std], ['航空写真', photo]);
