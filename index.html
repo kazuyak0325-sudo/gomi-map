@@ -334,8 +334,10 @@
     var s = S[i], now = !done[s.no];
     if (now) done[s.no] = true; else delete done[s.no];
     save();
-    if (now && i === cur) { var n = i + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; }   // 今向かう場所を完了にしたら、次へ進める
-    render(false);
+    var adv = false;
+    if (now && i === cur) { var n = i + 1; while (n < S.length && done[S[n].no]) n++; prevIdx = n - 1; cur = n; adv = true; }   // 今向かう場所を完了にしたら、次へ進める
+    if (adv) { if (following) setFollow(false); sheet.classList.remove('open'); }   // 次へ進んだときは、一覧を閉じて次の場所を見せる
+    render(adv);
     var st = list.scrollTop; renderList(); list.scrollTop = st;
     toast('№' + s.no + (now ? ' を完了にしました' : ' の完了を取り消しました'));
   }
