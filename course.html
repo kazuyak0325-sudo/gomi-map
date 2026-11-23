@@ -145,6 +145,7 @@
 <script src="lib/leaflet-maplibre-gl.js"></script>
 <script src="simple-style.js"></script>
 <script src="poi.js"></script>
+<script src="sig.js"></script>
 <script src="base.js"></script>
 <script>
 // コースデータを、URLの ?c=コースID から読み込む（なければコース選択へ）
@@ -225,6 +226,11 @@
     if (z >= 15) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
   }
   map.attributionControl.addAttribution('目標物 © OpenStreetMap contributors');
+  // 信号（かなり拡大したときだけ表示）
+  var sigLayer = L.layerGroup();
+  if (typeof SIGS !== 'undefined') SIGS.forEach(function(p){ L.marker([p[0], p[1]], {icon:L.divIcon({className:'', html:'<div style="font-size:14px;line-height:16px;text-align:center;filter:drop-shadow(0 0 2px #fff)">🚦</div>', iconSize:[16,16], iconAnchor:[8,8]}), interactive:false, keyboard:false, zIndexOffset:-600}).addTo(sigLayer); });
+  function sigZoom(){ if (map.getZoom() >= 17) { if (!map.hasLayer(sigLayer)) sigLayer.addTo(map); } else if (map.hasLayer(sigLayer)) map.removeLayer(sigLayer); }
+  map.on('zoomend', sigZoom); sigZoom();
   map.on('zoomend', zoomClass);
 
   // 横向き（カードが右側）か縦向き（カードが下側）かで、地図を合わせるときの余白を変える
@@ -263,7 +269,7 @@
   });
   // 目標物（コンビニ・学校・お店など）
   var POI_STYLE = {cv:['🏪','#1e88e5'], sm:['🛒','#1e88e5'], sc:['🏫','#f9a825'], hp:['🏥','#e53935'], po:['📮','#e53935'], fu:['⛽','#6d4c41'], bk:['🏦','#546e7a'],
-    fd:['🍴','#fb8c00'], dr:['💊','#43a047'], cc:['🏛','#7e57c2'], wp:['⛩','#8e24aa'], pk:['🌳','#43a047'], sh:['🛍','#1e88e5'], tr:['📷','#00897b'], of:['🏢','#546e7a']};
+    fd:['🍴','#fb8c00'], dr:['💊','#43a047'], ind:['🏭','#795548'], gv:['🏤','#5e35b1'], cc:['🏛','#7e57c2'], wp:['⛩','#8e24aa'], pk:['🌳','#43a047'], sh:['🛍','#1e88e5'], tr:['📷','#00897b'], of:['🏢','#546e7a']};
   if (typeof POIS !== 'undefined') POIS.forEach(function(p){
     var st = POI_STYLE[p.c] || ['•','#777'];
     L.marker([p.lat, p.lng], {icon:L.divIcon({className:'', html:'<div class="poi" style="--c:' + st[1] + '"><span class="pi">' + st[0] + '</span><span class="pn">' + esc(p.n) + '</span></div>', iconSize:[18,18], iconAnchor:[9,9]}), interactive:false, keyboard:false, zIndexOffset:-500}).addTo(poiLayer);
