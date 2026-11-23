@@ -48,6 +48,7 @@
   .lbl{display:none;background:none;border:0;box-shadow:none;color:#222;font-weight:bold;font-size:12px;padding:0;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff}
   .lbl:before{display:none}
   .z-label .lbl{display:block}
+  .nm-off .lbl{display:none !important}   /* ステーション名を消す設定のとき */
   .poi{position:relative;white-space:nowrap;line-height:18px}
   .poi .pi{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--c);box-sizing:border-box;font-size:10px;vertical-align:middle}
   .poi .pn{display:none;margin-left:4px;font-size:11px;font-weight:bold;color:var(--c);vertical-align:middle;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 0 3px #fff}
@@ -155,6 +156,8 @@
   $('sub').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-s')) { fs = b.getAttribute('data-s'); } else { fcid = b.getAttribute('data-c'); } applyFilter(); };
 
   // ---- 目標物（コンビニ・学校・お店など）：色を選んだときだけ、拡大したときに表示 ----
+  var poiOn = true; try { poiOn = localStorage.getItem('gomi-map:poi') !== '0'; } catch(e) {}   // 目標物（お店など。信号は含まない）を表示するか（端末に覚えておく）
+  function setPoi(v){ poiOn = v; try { localStorage.setItem('gomi-map:poi', v ? '1' : '0'); } catch(e) {} zoomClass(); sigZoom(); }
   var poiLayer = L.layerGroup();
   var POI_STYLE = {cv:['🏪','#1e88e5'], sm:['🛒','#1e88e5'], sc:['🏫','#f9a825'], hp:['🏥','#e53935'], po:['📮','#e53935'], fu:['⛽','#6d4c41'], bk:['🏦','#546e7a'],
     fd:['🍴','#fb8c00'], dr:['💊','#43a047'], ind:['🏭','#795548'], gv:['🏤','#5e35b1'], cc:['🏛','#7e57c2'], wp:['⛩','#8e24aa'], pk:['🌳','#43a047'], sh:['🛍','#1e88e5'], tr:['📷','#00897b'], of:['🏢','#546e7a']};
@@ -164,7 +167,7 @@
   });
   function zoomClass(){
     var z = map.getZoom(), c = map.getContainer().classList; c.toggle('z-small', z < 15); c.toggle('z-label', z >= 16); c.toggle('z-poi', z >= 16);
-    if (z >= 15 && active()) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
+    if (z >= 15 && active() && poiOn) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
     if (typeof sigZoom === 'function') sigZoom();
   }
   // 信号（かなり拡大したときだけ表示）
@@ -173,6 +176,13 @@
   function sigZoom(){ if (map.getZoom() >= 17 && typeof active === 'function' && active()) { if (!map.hasLayer(sigLayer)) sigLayer.addTo(map); } else if (map.hasLayer(sigLayer)) map.removeLayer(sigLayer); }
   map.on('zoomend', sigZoom); sigZoom();
   map.on('zoomend', zoomClass);
+  var PoiCtl = L.Control.extend({ options:{position:'bottomright'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = poiOn ? '🏪 お店 表示中' : '🏪 お店 非表示'; b.style.opacity = poiOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setPoi(!poiOn); upd(); }; return b; } });
+  new PoiCtl().addTo(map);
+  var nmOn = true; try { nmOn = localStorage.getItem('gomi-map:nm') !== '0'; } catch(e) {}   // ステーション名（ピンの横の文字）を表示するか（端末に覚えておく）
+  function setNm(v){ nmOn = v; try { localStorage.setItem('gomi-map:nm', v ? '1' : '0'); } catch(e) {} map.getContainer().classList.toggle('nm-off', !nmOn); }
+  setNm(nmOn);
+  var NmCtl = L.Control.extend({ options:{position:'bottomright'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = nmOn ? '🔤 名前 表示中' : '🔤 名前 非表示'; b.style.opacity = nmOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setNm(!nmOn); upd(); }; return b; } });
+  new NmCtl().addTo(map);
 
   // ---- ステーションのピン ----
   // 軽くするため：引いたとき、または色を選んでいないときは、軽い丸だけ。色を選んで拡大したときは、見える範囲のピンだけを、番号・名前つきで描く
