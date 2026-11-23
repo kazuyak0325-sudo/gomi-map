@@ -176,12 +176,12 @@
   function sigZoom(){ if (map.getZoom() >= 17 && typeof active === 'function' && active()) { if (!map.hasLayer(sigLayer)) sigLayer.addTo(map); } else if (map.hasLayer(sigLayer)) map.removeLayer(sigLayer); }
   map.on('zoomend', sigZoom); sigZoom();
   map.on('zoomend', zoomClass);
-  var PoiCtl = L.Control.extend({ options:{position:'bottomright'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = poiOn ? '🏪 お店 表示中' : '🏪 お店 非表示'; b.style.opacity = poiOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setPoi(!poiOn); upd(); }; return b; } });
+  var PoiCtl = L.Control.extend({ options:{position:'bottomleft'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = poiOn ? '🏪 お店 表示中' : '🏪 お店 非表示'; b.style.opacity = poiOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setPoi(!poiOn); upd(); }; return b; } });
   new PoiCtl().addTo(map);
   var nmOn = true; try { nmOn = localStorage.getItem('gomi-map:nm') !== '0'; } catch(e) {}   // ステーション名（ピンの横の文字）を表示するか（端末に覚えておく）
   function setNm(v){ nmOn = v; try { localStorage.setItem('gomi-map:nm', v ? '1' : '0'); } catch(e) {} map.getContainer().classList.toggle('nm-off', !nmOn); }
   setNm(nmOn);
-  var NmCtl = L.Control.extend({ options:{position:'bottomright'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = nmOn ? '🔤 名前 表示中' : '🔤 名前 非表示'; b.style.opacity = nmOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setNm(!nmOn); upd(); }; return b; } });
+  var NmCtl = L.Control.extend({ options:{position:'bottomleft'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = nmOn ? '🔤 名前 表示中' : '🔤 名前 非表示'; b.style.opacity = nmOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setNm(!nmOn); upd(); }; return b; } });
   new NmCtl().addTo(map);
 
   // ---- ステーションのピン ----
