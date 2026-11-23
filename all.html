@@ -167,13 +167,13 @@
   });
   function zoomClass(){
     var z = map.getZoom(), c = map.getContainer().classList; c.toggle('z-small', z < 15); c.toggle('z-label', z >= 16); c.toggle('z-poi', z >= 16);
-    if (z >= 15 && active() && poiOn) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
+    if (z >= 15 && poiOn) { if (!map.hasLayer(poiLayer)) poiLayer.addTo(map); } else if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
     if (typeof sigZoom === 'function') sigZoom();
   }
   // 信号（かなり拡大したときだけ表示）
   var sigLayer = L.layerGroup();
   if (typeof SIGS !== 'undefined') SIGS.forEach(function(p){ L.marker([p[0], p[1]], {icon:L.divIcon({className:'', html:'<div style="font-size:14px;line-height:16px;text-align:center;filter:drop-shadow(0 0 2px #fff)">🚦</div>', iconSize:[16,16], iconAnchor:[8,8]}), interactive:false, keyboard:false, zIndexOffset:-600}).addTo(sigLayer); });
-  function sigZoom(){ if (map.getZoom() >= 17 && typeof active === 'function' && active()) { if (!map.hasLayer(sigLayer)) sigLayer.addTo(map); } else if (map.hasLayer(sigLayer)) map.removeLayer(sigLayer); }
+  function sigZoom(){ if (map.getZoom() >= 17) { if (!map.hasLayer(sigLayer)) sigLayer.addTo(map); } else if (map.hasLayer(sigLayer)) map.removeLayer(sigLayer); }
   map.on('zoomend', sigZoom); sigZoom();
   map.on('zoomend', zoomClass);
   var PoiCtl = L.Control.extend({ options:{position:'bottomleft'}, onAdd: function(){ var b = L.DomUtil.create('button', ''); b.type = 'button'; b.style.cssText = 'font:bold 13px sans-serif;padding:8px 10px;border-radius:8px;border:2px solid rgba(0,0,0,.25);background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.3)'; function upd(){ b.textContent = poiOn ? '🏪 お店 表示中' : '🏪 お店 非表示'; b.style.opacity = poiOn ? 1 : .6; } upd(); L.DomEvent.disableClickPropagation(b); b.onclick = function(){ setPoi(!poiOn); upd(); }; return b; } });
