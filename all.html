@@ -83,7 +83,7 @@
 <div id="map"></div>
 <div class="pnl" id="panel"><div class="top"><b id="ph" style="color:#e65100"></b><button id="pclose">閉じる</button></div><p>ピンの追加・修正は、事務所PCの管理ツールで行います。追加すると、すべてのコースに反映されます。新しく追加・修正された位置は、赤いピンで出ます（タップすると、通常の色に戻ります）。<br><button id="resetSeen" style="margin-top:6px;border:1px solid #e53935;background:#fff;color:#e53935;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:bold">赤い印をもう一度出す（確認済みの記録を消す）</button></p><div id="plist"></div></div>
 <div class="pnl" id="spanel"><div class="top"><b id="sh">検索結果</b><button id="sclose">閉じる</button></div><div id="slist"></div></div>
-<div class="pnl" id="npanel"><div class="top"><b id="nh" style="color:#e53935">NEW</b><button id="nclose">閉じる</button></div><p>管理ツールで追加・修正された位置の一覧です。押すと、その場所を地図で表示します（確認済みになります）。</p><div id="nlist"></div></div>
+<div class="pnl" id="npanel"><div class="top"><b id="nh" style="color:#e53935">NEW</b><button id="nclose">閉じる</button></div><p>管理ツールで追加・修正された位置の一覧です。押すと、その場所を地図で表示します（確認済みになります）。</p><div style="display:flex;gap:8px;padding:0 12px 8px"><button id="nAllMap" style="flex:1;padding:10px 6px;font-size:14px;font-weight:bold;border:2px solid #e53935;background:#fff;color:#e53935;border-radius:10px">🗺 すべて地図で見る</button><button id="nAllOk" style="flex:1;padding:10px 6px;font-size:14px;font-weight:bold;border:0;background:#e53935;color:#fff;border-radius:10px">✓ すべて確認済みにする</button></div><div id="nlist"></div></div>
 <script src="lib/leaflet.js"></script>
 <script src="lib/maplibre-gl.js"></script>
 <script src="lib/leaflet-maplibre-gl.js"></script>
@@ -258,6 +258,19 @@
       return '<div class="r tap" data-i="' + i + '"><div class="h">ST' + esc(p.st) + '　<span style="font-weight:normal;color:#555">地図 ' + esc(p.map) + '</span><span class="tag ' + (isNew(p) ? 'red">未確認' : 'gray">確認済み') + '</span></div><div class="m">' + esc(norm(p.mark)) + '　<span style="color:#888;font-size:12px">' + ds + '</span></div><div>' + chips(p.c) + '</div></div>';
     }).join('') : '<div class="r" style="color:#666">まだ、追加・修正された位置は、ありません。</div>';
   }
+  // 一括：すべてのNEWを地図に収めて見る／すべて確認済みにする
+  $('nAllMap').onclick = function(){
+    var l = newList(); if (!l.length) { toast('追加・修正された位置は、ありません'); return; }
+    npanel.classList.remove('open'); clearHl();
+    map.fitBounds(L.latLngBounds(l.map(function(p){ return [p.lat, p.lng]; })).pad(0.15), {maxZoom:17});
+    toast('追加・修正された位置 ' + l.length + '件を、地図に表示しました（赤い印は、まだ確認していないものです）');
+  };
+  $('nAllOk').onclick = function(){
+    var u = newList().filter(isNew); if (!u.length) { toast('未確認の位置は、ありません'); return; }
+    if (!confirm('未確認の ' + u.length + '件を、すべて確認済みにします（赤い印が、通常の色に戻ります）。\nよろしいですか？')) return;
+    u.forEach(function(p){ seen[p.k] = p.nw; }); try { localStorage.setItem(SEENKEY, JSON.stringify(seen)); } catch(e) {}
+    updNew(); build(); renderNew(); toast(u.length + '件を、確認済みにしました');
+  };
   $('nlist').onclick = function(e){ var r = e.target.closest('.tap'); if (!r) return; var p = nres[+r.getAttribute('data-i')]; if (p) showPin(p); };
   $('bNew').onclick = function(){ spanel.classList.remove('open'); $('panel').classList.remove('open'); sq.blur(); renderNew(); npanel.classList.add('open'); };
   $('nclose').onclick = function(){ npanel.classList.remove('open'); };
