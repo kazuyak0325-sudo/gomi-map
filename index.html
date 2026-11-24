@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ステーション地図">
+<meta name="apple-mobile-web-app-title" content="ごみ収集ナビ">
 <meta name="theme-color" content="#37474f">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>ステーション地図</title>
+<title>ごみ収集ナビ</title>
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;min-height:100%;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:#f4f1ea;color:#222;-webkit-text-size-adjust:100%}
@@ -37,7 +37,7 @@
 </style>
 </head>
 <body>
-<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ステーション地図</b><button class="adminbtn" id="adm">⚙ 管理</button></header>
+<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ごみ収集ナビ</b><button class="adminbtn" id="adm">⚙ 管理</button></header>
 <main>
   <div id="v1">
     <button class="allmap" id="allmap">🗺 全ステーションマップ<small>全コースのステーションを一枚の地図で見る／ピンのない場所を確認</small></button>
@@ -81,7 +81,7 @@
   }
   function showTop(){
     document.getElementById('v1').style.display = 'block'; document.getElementById('v2').style.display = 'none';
-    document.getElementById('back').style.display = 'none'; document.getElementById('ttl').textContent = 'ステーション地図';
+    document.getElementById('back').style.display = 'none'; document.getElementById('ttl').textContent = 'ごみ収集ナビ';
   }
   function route(){ var m = decodeURIComponent(location.hash || '').match(/^#g=(.+)$/); if (m && group(m[1]).length) showGroup(m[1]); else showTop(); }
 

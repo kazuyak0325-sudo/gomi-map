@@ -1,6 +1,6 @@
 {
-  "name": "ステーション地図",
-  "short_name": "ステーション地図",
+  "name": "ごみ収集ナビ",
+  "short_name": "ごみ収集ナビ",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
