@@ -66,6 +66,16 @@
   #card button,#card a.g{border:0;border-radius:10px;font-size:15px;padding:12px 10px;font-weight:bold;text-align:center;text-decoration:none}
   #card .c2 .steps{background:var(--cl);color:var(--cd);flex:1}
   #card .c2 .go{background:var(--c);color:var(--ct);font-size:24px;height:64px;padding:0}   /* 完了ボタンは大きく押しやすく */
+  #card .c4{display:flex;gap:6px;margin-top:5px;align-items:center}
+  #card .c4 button.vio{width:100%;background:#fff3e0;color:#e65100;border:2px solid #e65100;padding:8px 10px;font-size:15px}
+  #card .c4 button.vs{flex:none;width:52px;padding:8px 0;background:#ffe0b2;color:#bf360c;font-size:20px}
+  #card .c4 .vt{flex:1;text-align:center;font-weight:bold;color:#bf360c;font-size:15px}
+  #card .c4 button.vc{flex:none;background:#eee;color:#333;padding:8px 12px;font-size:13px}
+  #card .c4.on{background:#fff3e0;border-radius:10px;padding:4px}
+  .row .vb{flex:none;min-width:46px;height:42px;border-radius:10px;border:2px solid #e65100;background:#fff3e0;color:#bf360c;font-size:16px;font-weight:bold;padding:0 6px}
+  .row .vb.on{background:#e65100;color:#fff}
+  .row .vb.off{opacity:.4}
+  .vbadge{display:inline-block;margin-left:8px;background:#e65100;color:#fff;border-radius:10px;padding:0 8px;font-size:12px;font-weight:bold}
   #card .c3{display:flex;flex-direction:column;gap:5px;margin-top:5px}      /* 縦一列：1つ戻る／Googleマップで案内 */
   #card .c2 button,#card .c3 button,#card .c3 a.g{flex:none;width:100%;box-sizing:border-box}
   #card .c3 button,#card .c3 a.g{padding:7px 10px;font-size:14px}
@@ -182,7 +192,39 @@
   var d0 = new Date(), ymd = d0.getFullYear() + '-' + ('0'+(d0.getMonth()+1)).slice(-2) + '-' + ('0'+d0.getDate()).slice(-2);
   var KEY = 'gomi-map:' + cid + ':' + ymd, done = {};
   try { done = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) {}
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(done)); } catch(e) {} }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(done)); } catch(e) {} try { reconcile(); } catch(e) {} }
+
+  // ---- ごみ収集アプリとの連動（同じ端末・同じ日の記録を、双方向で共有する）----
+  // ごみ収集アプリの記録: localStorage "gomi_<コースID>_<日付>" = { ST№: "HH:MM" }。ここで完了にすると、同じ記録を書き込む。向こうで記録しても、ここが完了になる。
+  var ADM = isAdminDev();   // 裏モード（じゅもんを入れた端末）のときだけ、ごみ収集アプリと連動する。そうでなければ、ナビだけの保存場所を使う
+  var VKEY = ADM ? 'gomi_veh_' + cid + '_' + ymd : 'gomi-map:veh:' + cid + '_' + ymd, SVKEY = 'gomi_sveh_' + cid + '_' + ymd, LASTV = ADM ? 'gomi_last_vehicle' : 'gomi-map:lastveh';   // 車両番号（ごみ収集アプリと共通）／ステーションごとの車両番号
+  function getVeh(){ try { return localStorage.getItem(VKEY) || ''; } catch(e) { return ''; } }
+  var GKEY = 'gomi_' + cid + '_' + ymd, SKEY = 'gomi-map:sync:' + cid + ':' + ymd, synced = {};
+  try { synced = JSON.parse(localStorage.getItem(SKEY) || '{}'); } catch(e) {}
+  var stCount = {}; S.forEach(function(s){ stCount[s.st] = (stCount[s.st] || 0) + 1; });
+  function nowHM(){ var d = new Date(); return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
+  function reconcile(){   // 戻り値: ここの完了が、向こうの変更で変わったか
+    if (!ADM) return false;   // 連動は、裏モードの端末だけ
+    var recs = {}; try { recs = JSON.parse(localStorage.getItem(GKEY) || '{}'); } catch(e) {}
+    var rch = false, sch = false, dch = false, vch = false, sv = {}, veh = getVeh();
+    try { sv = JSON.parse(localStorage.getItem(SVKEY) || '{}'); } catch(e) {}
+    S.forEach(function(s){
+      if (!s.st || stCount[s.st] > 1) return;   // 同じST№が、複数の行にあるときは、連動しない（記録がまざるため）
+      var no = s.no, rec = recs[s.st];
+      if (done[no]) {
+        if (synced[no] === undefined) { if (!rec) { rec = recs[s.st] = nowHM(); rch = true; if (veh && !sv[s.st]) { sv[s.st] = veh; vch = true; } } synced[no] = rec; sch = true; }   // ここで完了にした → 向こうにも書く
+        else if (!rec) { delete done[no]; delete synced[no]; sch = true; dch = true; }                                        // 向こうで取り消した → ここも取り消す
+      } else {
+        if (rec) {
+          if (synced[no] !== undefined) { delete recs[s.st]; delete synced[no]; rch = true; sch = true; if (sv[s.st]) { delete sv[s.st]; vch = true; } }                      // ここで取り消した → 向こうも取り消す
+          else { done[no] = true; synced[no] = rec; sch = true; dch = true; }                                                  // 向こうで記録した → ここも完了にする
+        } else if (synced[no] !== undefined) { delete synced[no]; sch = true; }
+      }
+    });
+    try { if (vch) localStorage.setItem(SVKEY, JSON.stringify(sv)); if (rch) localStorage.setItem(GKEY, JSON.stringify(recs)); if (sch) localStorage.setItem(SKEY, JSON.stringify(synced)); if (dch) localStorage.setItem(KEY, JSON.stringify(done)); } catch(e) {}
+    return dch;
+  }
+  reconcile();
   function firstNotDone(){ for (var i = 0; i < S.length; i++) if (!done[S[i].no]) return i; return S.length; }
   var cur = firstNotDone();   // 次に向かう位置（0〜S.length。S.lengthは会社へ戻る）
   var prevIdx = cur - 1;      // 直前に完了した位置（-1は会社から）。cur-1 と違うときは「順番どおりでない移動」
@@ -213,7 +255,7 @@
       '<div class="mh">表示</div><button data-act="all" class="' + (showAll ? 'sel' : '') + '">' + (showAll ? '✓ ' : '') + '全ピンを番号つきで表示</button>' +
       '<button data-act="poi" class="' + (poiOn ? 'sel' : '') + '">' + (poiOn ? '✓ ' : '') + 'お店・目標物を表示</button>' +
       '<button data-act="nm" class="' + (nmOn ? 'sel' : '') + '">' + (nmOn ? '✓ ' : '') + 'ステーション名を表示</button>' +
-      '<div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div><div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
+      '<div class="mh">車両</div><button data-act="veh">🚛 車両 ' + (getVeh() || '未入力') + '（変更）</button><div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>' + (isAdminDev() ? '<div class="mh">管理者</div><button data-act="app">📋 ごみ収集アプリで開く</button><button data-act="apptop">🏠 ごみ収集アプリのトップ</button>' : '') + '<div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
   }
   document.getElementById('bMenu').onclick = function(e){ e.stopPropagation(); if (menuEl.classList.contains('open')) { menuEl.classList.remove('open'); } else { renderMenu(); menuEl.classList.add('open'); } };
   menuEl.onclick = function(e){
@@ -222,6 +264,9 @@
     else if (b.getAttribute('data-act') === 'all') { document.getElementById('bAll').click(); }
     else if (b.getAttribute('data-act') === 'poi') { setPoi(!poiOn); }
     else if (b.getAttribute('data-act') === 'nm') { setNm(!nmOn); }
+    else if (b.getAttribute('data-act') === 'veh') { menuEl.classList.remove('open'); askVeh(true); return; }
+    else if (b.getAttribute('data-act') === 'app') { location.href = '/gomi-app/' + cid.replace('-', '/') + '/?plain=1'; return; }
+    else if (b.getAttribute('data-act') === 'apptop') { location.href = '/gomi-app/'; return; }
     else if (b.getAttribute('data-act') === 'upd') { menuEl.classList.remove('open'); appForceUpdate(); return; }
     else if (b.getAttribute('data-act') === 'home') { location.href = 'index.html'; return; }
     menuEl.classList.remove('open');
@@ -331,12 +376,16 @@
 
   // ---- 区間（前→次）の案内線 ----
   var legLine = null, lastPos = null, following = false, viewFixed = false;
+  var mState = [];   // ピンごとの、前回の見た目（変わったピンだけ、描き直して、速くする）
   function render(fit){
     // ピンの色
     S.forEach(function(s, i){
       var focus = showAll || (i >= cur && i <= cur + 4);
       var cls = i === cur ? 'sel' : (done[s.no] ? (showAll ? 'done' : 'dot done') : (focus ? '' : 'dot'));
       if (cls === '' && isNew(s)) cls = 'new';   // 新しく追加・修正された位置は、赤
+      var sk = cls + '|' + (i === cur ? 800 : (focus ? 200 : 0)) + '|' + (((i === cur || focus) && s.mark) ? (i === cur ? 'now' : 'lbl') : '');
+      if (mState[i] === sk) return;   // 変わっていないピンは、そのまま
+      mState[i] = sk;
       markers[i].setIcon(pinIcon(s.no, cls));
       markers[i].setZIndexOffset(i === cur ? 800 : (focus ? 200 : 0));
       markers[i].unbindTooltip();
@@ -345,7 +394,7 @@
     });
     var ci = document.getElementById('coIcon'); if (ci) ci.className = 'co' + (cur >= S.length ? ' sel' : '');
     var nDone = S.filter(function(s){ return done[s.no]; }).length;
-    document.getElementById('title').textContent = C.name + '　' + nDone + '/' + S.length + '完了';
+    updTitle();
 
     // 案内線
     if (legLine) { map.removeLayer(legLine); legLine = null; }
@@ -382,9 +431,11 @@
            : '<div class="mk">' + (s.mark ? esc(s.mark) : '（目標物なし）') + '</div><div class="st">ST№ ' + esc(s.st) + '　／　地図 ' + esc(s.map) + '</div>') +
       '<div class="lg">' + prevName + 'から' + legInfo + '<span id="gd"></span></div>' + gapHtml + '</div></div>' +
       '<div class="c2"><button class="go" id="bDone">' + (fin ? '帰社しました' : '完了 → 次へ') + '</button></div>' +
+      (fin ? '' : vioHtml(s)) +
       '<div class="c3"><button class="back" id="bBack">1つ戻る</button><a class="g" target="_blank" href="' + gHref + '">Googleマップで案内' + (seq ? '' : '（現在地から）') + '</a></div>';
     document.getElementById('bDone').onclick = onDone;
     document.getElementById('bBack').onclick = onBack;
+    if (!fin) bindVio(s);
     buildSteps(leg);
     updateDist();
     syncCard();
@@ -411,6 +462,86 @@
     if (cur <= 0) return;
     cur = cur - 1; if (cur < S.length) delete done[S[cur].no]; prevIdx = cur - 1; save(); render(true);
   }
+
+
+
+  // ---- 車両番号（コースを開いたとき、まだ入っていなければ、聞く。ごみ収集アプリと共通）----
+  function updTitle(){   // 上の見出し：コース名・完了数、その下に車両番号（タップで変更）
+    var n = S.filter(function(s){ return done[s.no]; }).length, v = getVeh(), t = document.getElementById('title');
+    t.innerHTML = esc(C.name) + '　' + n + '/' + S.length + '完了<br><span style="font-size:12px;font-weight:normal">🚛 車両 ' + (v || '未入力') + '</span>';
+    t.style.lineHeight = '1.25'; t.style.cursor = 'pointer';
+  }
+  document.getElementById('title').onclick = function(){ askVeh(true); };
+  // ---- 違反ゴミ（ごみ収集アプリと共通：gomi_v_<コース>_<日付> = { ST№: {count, time} }）----
+  var VIOKEY = ADM ? 'gomi_v_' + cid + '_' + ymd : 'gomi-map:vio:' + cid + '_' + ymd;
+  function getVio(){ try { return JSON.parse(localStorage.getItem(VIOKEY) || '{}'); } catch(e) { return {}; } }
+  function vioOf(s){ var v = getVio()[s.st]; return v && v.count > 0 ? v.count : 0; }
+  function vioChange(s, delta){
+    var m = getVio(), v = m[s.st];
+    if (!v) { if (delta > 0) m[s.st] = { count: delta, time: nowHM() }; }
+    else { v.count = (v.count || 0) + delta; if (v.count <= 0) delete m[s.st]; }
+    try { localStorage.setItem(VIOKEY, JSON.stringify(m)); } catch(e) {}
+    if (ADM) try { var veh = getVeh(), sv = JSON.parse(localStorage.getItem(SVKEY) || '{}'); if (m[s.st] && veh && !sv[s.st]) { sv[s.st] = veh; localStorage.setItem(SVKEY, JSON.stringify(sv)); } } catch(e) {}
+  }
+  function vioHtml(s){
+    if (stCount[s.st] > 1) return '<div class="c4"><button class="vio" disabled style="opacity:.5;font-size:12px">⚠ 違反ゴミ（同じST№が複数あるため、ごみ収集アプリで入力）</button></div>';
+    var n = vioOf(s);
+    if (!n) return '<div class="c4"><button class="vio" id="vioOn">⚠ 違反ゴミあり</button></div>';
+    return '<div class="c4 on"><button class="vs" id="vioMinus">－</button><span class="vt">⚠ 違反ゴミ ' + n + '個</span><button class="vs" id="vioPlus">＋</button><button class="vc" id="vioClr">解除</button></div>';
+  }
+  function bindVio(s){
+    var on = document.getElementById('vioOn'), mi = document.getElementById('vioMinus'), pl = document.getElementById('vioPlus'), cl = document.getElementById('vioClr');
+    function after(){ render(false); try { var st0 = list.scrollTop; renderList(); list.scrollTop = st0; } catch(e) {} }
+    if (on) on.onclick = function(){ vioChange(s, 1); after(); };
+    if (pl) pl.onclick = function(){ vioChange(s, 1); after(); };
+    if (mi) mi.onclick = function(){ vioChange(s, -1); after(); };
+    if (cl) cl.onclick = function(){ vioChange(s, -(vioOf(s) || 1)); after(); };
+  }
+  function vbBtn(s, i){
+    if (stCount[s.st] > 1) return '<button class="vb off" data-vb="' + i + '" aria-label="違反ゴミ">⚠</button>';
+    var n = vioOf(s); return '<button class="vb' + (n ? ' on' : '') + '" data-vb="' + i + '" aria-label="違反ゴミ">⚠' + (n ? n : '') + '</button>';
+  }
+  function openVioModal(i){
+    var s = S[i];
+    if (stCount[s.st] > 1) { toast('同じST№が複数あるため、ごみ収集アプリで入力してください'); return; }
+    var ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;padding:18px;width:min(92vw,340px);box-shadow:0 4px 18px rgba(0,0,0,.4);text-align:center"><p style="margin:0 0 4px;font-size:15px;font-weight:bold">ST' + esc(s.st) + '　' + esc(s.mark) + '</p><p style="margin:0 0 12px;font-size:13px;color:#555">違反ゴミの個数</p><div style="display:flex;align-items:center;justify-content:center;gap:16px"><button id="vmM" style="width:60px;height:56px;border:0;border-radius:12px;background:#ffe0b2;color:#bf360c;font-size:28px;font-weight:bold">－</button><span id="vmN" style="font-size:30px;font-weight:bold;min-width:70px;color:#bf360c"></span><button id="vmP" style="width:60px;height:56px;border:0;border-radius:12px;background:#ffe0b2;color:#bf360c;font-size:28px;font-weight:bold">＋</button></div><div style="display:flex;gap:10px;justify-content:center;margin-top:16px"><button id="vmC" style="border:0;background:#eee;border-radius:10px;padding:12px 16px;font-size:15px">解除</button><button id="vmX" style="border:0;background:var(--c,#1565c0);color:var(--ct,#fff);border-radius:10px;padding:12px 26px;font-size:16px;font-weight:bold">閉じる</button></div></div>';
+    document.body.appendChild(ov);
+    function draw(){ ov.querySelector('#vmN').textContent = vioOf(s) + '個'; }
+    draw();
+    ov.querySelector('#vmP').onclick = function(){ vioChange(s, 1); draw(); };
+    ov.querySelector('#vmM').onclick = function(){ vioChange(s, -1); draw(); };
+    ov.querySelector('#vmC').onclick = function(){ vioChange(s, -(vioOf(s) || 1)); draw(); };
+    ov.querySelector('#vmX').onclick = function(){ ov.remove(); render(false); var st0 = list.scrollTop; renderList(); list.scrollTop = st0; };
+  }
+  function vioBadge(s){ var n = stCount[s.st] > 1 ? 0 : vioOf(s); return n ? '<span class="vbadge">⚠ ' + n + '</span>' : ''; }
+  function isAdminDev(){ try { return localStorage.getItem('gomi_admin_nav') === '1'; } catch(e) { return false; } }
+  function setVeh(v){
+    var p = ('0000' + v).slice(-4);
+    try { localStorage.setItem(VKEY, p); localStorage.setItem(LASTV, p); } catch(e) {}
+    try { updTitle(); } catch(e) {}
+    if (ADM) try {   // すでに記録のあるステーションにも、車両番号を付ける（連動のときだけ）
+      var recs = JSON.parse(localStorage.getItem(GKEY) || '{}'), sv = JSON.parse(localStorage.getItem(SVKEY) || '{}'), ch = false;
+      Object.keys(recs).forEach(function(k){ if (!sv[k]) { sv[k] = p; ch = true; } });
+      if (ch) localStorage.setItem(SVKEY, JSON.stringify(sv));
+    } catch(e) {}
+  }
+  function askVeh(fromMenu){
+    var init = getVeh(); if (!init) { try { init = localStorage.getItem(LASTV) || ''; } catch(e) {} }
+    var ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;padding:18px;width:min(92vw,340px);box-shadow:0 4px 18px rgba(0,0,0,.4)"><p style="margin:0 0 10px;font-size:16px;font-weight:bold">車両番号を入力してください（数字4桁まで）</p><input id="vehIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" style="width:100%;font-size:24px;padding:10px;border:2px solid #90a4ae;border-radius:10px;box-sizing:border-box;text-align:center" value="' + init + '"><div id="vehMsg" style="color:#c62828;font-size:13px;min-height:18px;margin-top:6px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px"><button id="vehNo" style="border:0;background:#eee;border-radius:10px;padding:12px 16px;font-size:15px">キャンセル</button><button id="vehOk" style="border:0;background:var(--c,#1565c0);color:var(--ct,#fff);border-radius:10px;padding:12px 22px;font-size:16px;font-weight:bold">決定</button></div></div>';
+    document.body.appendChild(ov); var inp = ov.querySelector('#vehIn'); inp.focus(); inp.select();
+    ov.querySelector('#vehNo').onclick = function(){ if (fromMenu) ov.remove(); else location.href = 'index.html'; };
+    function ok(){ var v = inp.value.trim(); if (!/^[0-9]{1,4}$/.test(v)) { ov.querySelector('#vehMsg').textContent = '車両番号は数字1〜4桁で入力してください'; return; } setVeh(v); ov.remove(); try { toast('車両 ' + getVeh() + ' を保存しました'); } catch(e) {} }
+    ov.querySelector('#vehOk').onclick = ok; inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') ok(); });
+  }
+  setTimeout(function(){ if (!getVeh()) askVeh(false); }, 400);
+
+  // 向こう（ごみ収集アプリ）で記録が変わったら、ここにも反映する
+  function resync(){ if (reconcile()) { cur = firstNotDone(); render(true); try { var st0 = list.scrollTop; renderList(); list.scrollTop = st0; } catch(e) {} } }
+  window.addEventListener('focus', resync);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) resync(); });
+  window.addEventListener('storage', function(e){ if (e.key === GKEY) resync(); if (e.key === VIOKEY) { render(false); try { var st1 = list.scrollTop; renderList(); list.scrollTop = st1; } catch(x) {} } });
 
   // ---- 曲がり方リスト ----
   var stepsEl = document.getElementById('steps');
@@ -479,7 +610,7 @@
   function renderList(){
     var t = q.value.trim().toLowerCase();
     list.innerHTML = S.map(function(s, i){ return {s:s, i:i}; }).filter(function(o){ var s = o.s; return !t || (s.no+' '+s.st+' '+s.map+' '+s.mark).toLowerCase().indexOf(t) >= 0; }).map(function(o){
-      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div class="tx">ST' + s.st + '　' + esc(s.mark) + (isNew(s) ? '<span class="nw">NEW</span>' : '') + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div><button class="ck" data-ck="' + o.i + '" aria-label="完了">✓</button></div>';
+      var s = o.s; return '<div class="row' + (done[s.no] ? ' done' : '') + '" data-idx="' + o.i + '"><span class="n">' + s.no + '</span><div class="tx">ST' + s.st + '　' + esc(s.mark) + (isNew(s) ? '<span class="nw">NEW</span>' : '') + '<br><small>地図 ' + s.map + (done[s.no] ? '　✓完了' : '') + '</small></div>' + vbBtn(s, o.i) + '<button class="ck" data-ck="' + o.i + '" aria-label="完了">✓</button></div>';
     }).join('') + missingRows(t);
   }
   // 地図にピンがないステーション（コース表にはあるが位置が未登録）。見落とし防止のため、一覧の最後に出す
@@ -491,6 +622,7 @@
     }).join('');
   }
   list.onclick = function(e){
+    var vb = e.target.closest('.vb'); if (vb) { openVioModal(+vb.getAttribute('data-vb')); return; }
     var ck = e.target.closest('.ck'); if (ck) { toggleDone(+ck.getAttribute('data-ck')); return; }   // チェック：その場所だけ完了／取り消し
     var row = e.target.closest('.row'); if (!row) return;
     var i = +row.dataset.idx; sheet.classList.remove('open'); if (following) setFollow(false); cur = i; render(true);   // タップした場所を次の目的地にする

@@ -1,5 +1,5 @@
 // アプリのバージョンと「最新版に更新」。大きな変更のときだけ、番号を上げる。
-var APP_VERSION = 'v1.0';
+var APP_VERSION = 'v1.1';
 function appForceUpdate() {
   if (!confirm('最新版に更新します（保存されている画面のデータを消して、読み込み直します）。\n電波のある場所で行ってください。\n\nよろしいですか？')) return;
   var jobs = [];
