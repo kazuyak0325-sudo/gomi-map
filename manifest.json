@@ -2,6 +2,7 @@
   "name": "ごみ収集ナビ",
   "short_name": "ごみ収集ナビ",
   "start_url": "./index.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#7b1fa2",
