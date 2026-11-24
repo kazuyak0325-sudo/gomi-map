@@ -96,8 +96,8 @@
   .pop a{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;background:var(--c);color:var(--ct);border-radius:6px;text-decoration:none;font-size:13px}
   /* 横向き（パソコン・iPad・スマホ横向き）：左にカード、右に地図 */
   @media (orientation:landscape) and (min-width:640px){
-    :root{--pw:clamp(300px,38%,420px);--hh:52px}
-    #map{left:var(--pw)}
+    :root{--pw:clamp(260px,28%,330px);--hh:52px}
+    #map{left:0}
     #hd{padding:calc(env(safe-area-inset-top) + 7px) calc(env(safe-area-inset-right) + 14px) 7px calc(env(safe-area-inset-left) + 14px)}
     #hd b{font-size:16px}
     #hd #bHome .bl{display:inline}
@@ -105,7 +105,7 @@
     #hd button{padding:5px 16px;font-size:15px}
     .leaflet-top{margin-top:calc(env(safe-area-inset-top) + var(--hh) + 4px)}
     .leaflet-right{margin-right:env(safe-area-inset-right)}
-    #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + var(--hh));bottom:0;width:var(--pw);box-sizing:border-box;border-radius:0 14px 0 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
+    #card{left:0;right:auto;top:calc(env(safe-area-inset-top) + var(--hh));bottom:auto;max-height:calc(100% - var(--hh) - env(safe-area-inset-top));width:var(--pw);box-sizing:border-box;border-radius:0 0 14px 0;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
     #card .mk{font-size:19px}
     #card .c2 .go{height:68px;font-size:22px}
     /* ボタンを縦一列に（上から：完了→次へ、曲がり方、1つ戻る、Googleマップで案内） */
@@ -145,6 +145,7 @@
 <script src="lib/maplibre-gl.js"></script>
 <script src="lib/leaflet-maplibre-gl.js"></script>
 <script src="simple-style.js"></script>
+<script src="ver.js"></script>
 <script src="poi.js"></script>
 <script src="sig.js"></script>
 <script src="base.js"></script>
@@ -211,7 +212,7 @@
       '<div class="mh">表示</div><button data-act="all" class="' + (showAll ? 'sel' : '') + '">' + (showAll ? '✓ ' : '') + '全ピンを番号つきで表示</button>' +
       '<button data-act="poi" class="' + (poiOn ? 'sel' : '') + '">' + (poiOn ? '✓ ' : '') + 'お店・目標物を表示</button>' +
       '<button data-act="nm" class="' + (nmOn ? 'sel' : '') + '">' + (nmOn ? '✓ ' : '') + 'ステーション名を表示</button>' +
-      '<div class="mh">ほか</div><button data-act="home">◀ コース選択へ戻る</button>';
+      '<div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div><div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
   }
   document.getElementById('bMenu').onclick = function(e){ e.stopPropagation(); if (menuEl.classList.contains('open')) { menuEl.classList.remove('open'); } else { renderMenu(); menuEl.classList.add('open'); } };
   menuEl.onclick = function(e){
@@ -220,6 +221,7 @@
     else if (b.getAttribute('data-act') === 'all') { document.getElementById('bAll').click(); }
     else if (b.getAttribute('data-act') === 'poi') { setPoi(!poiOn); }
     else if (b.getAttribute('data-act') === 'nm') { setNm(!nmOn); }
+    else if (b.getAttribute('data-act') === 'upd') { menuEl.classList.remove('open'); appForceUpdate(); return; }
     else if (b.getAttribute('data-act') === 'home') { location.href = 'index.html'; return; }
     menuEl.classList.remove('open');
   };
