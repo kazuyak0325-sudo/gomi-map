@@ -515,7 +515,7 @@
     ov.querySelector('#vmX').onclick = function(){ ov.remove(); render(false); var st0 = list.scrollTop; renderList(); list.scrollTop = st0; };
   }
   function vioBadge(s){ var n = stCount[s.st] > 1 ? 0 : vioOf(s); return n ? '<span class="vbadge">⚠ ' + n + '</span>' : ''; }
-  function isAdminDev(){ try { return localStorage.getItem('gomi_admin_nav') === '1'; } catch(e) { return false; } }
+  function isAdminDev(){ return (function(){ try { var v = localStorage.getItem('gomi_admin_nav'); if (!v) return false; var d = new Date(), t = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); if (v === '1') { localStorage.setItem('gomi_admin_nav', t); return true; } if (v === t) return true; localStorage.removeItem('gomi_admin_nav'); return false; } catch(e) { return false; } })(); }   // 裏モードは、その日だけ有効（次の日には、自動で解除）
   function setVeh(v){
     var p = ('0000' + v).slice(-4);
     try { localStorage.setItem(VKEY, p); localStorage.setItem(LASTV, p); } catch(e) {}

@@ -67,7 +67,7 @@
 
   // ---- 色コースをタップしたとき、その日の車両番号を聞く（ごみ収集アプリと共通の保存場所。その色の全コースに入れる）----
   var d0 = new Date(), ymd = d0.getFullYear() + '-' + ('0' + (d0.getMonth() + 1)).slice(-2) + '-' + ('0' + d0.getDate()).slice(-2);
-  var ADM = false; try { ADM = localStorage.getItem('gomi_admin_nav') === '1'; } catch(e) {}   // 裏モードのときだけ、ごみ収集アプリと連動
+  var ADM = (function(){ try { var v = localStorage.getItem('gomi_admin_nav'); if (!v) return false; var d = new Date(), t = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); if (v === '1') { localStorage.setItem('gomi_admin_nav', t); return true; } if (v === t) return true; localStorage.removeItem('gomi_admin_nav'); return false; } catch(e) { return false; } })();   // 裏モードは、その日だけ有効（次の日には、自動で解除）   // 裏モードのときだけ、ごみ収集アプリと連動
   function vk(id){ return ADM ? 'gomi_veh_' + id + '_' + ymd : 'gomi-map:veh:' + id + '_' + ymd; }
   var LASTV = ADM ? 'gomi_last_vehicle' : 'gomi-map:lastveh';
   function hasVeh(g){ return group(g).every(function(c){ try { return !!localStorage.getItem(vk(c.id)); } catch(e) { return false; } }); }
