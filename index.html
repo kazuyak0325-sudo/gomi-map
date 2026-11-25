@@ -124,7 +124,7 @@
   document.getElementById('adm').onclick = openAdmin;
   function renderAppMenu(){
     var el = document.getElementById('menu');
-    el.innerHTML = '<button data-act="top">🏠 トップに戻る</button><button data-act="upd">🔄 最新版に更新</button><div class="ver">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>';
+    el.innerHTML = '<button data-act="top">🏠 トップに戻る</button><button data-act="upd">🔄 最新版に更新</button>' + (ADM ? '<button data-act="uraoff">🔓 裏モードを終了</button>' : '') + '<div class="ver">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>';
   }
   document.getElementById('bMenu').onclick = function(e){ e.stopPropagation(); var el = document.getElementById('menu'); if (el.classList.contains('open')) el.classList.remove('open'); else { renderAppMenu(); el.classList.add('open'); } };
   document.getElementById('menu').onclick = function(e){
@@ -132,6 +132,7 @@
     this.classList.remove('open');
     if (a === 'top') { if (location.hash) { location.hash = ''; } window.scrollTo(0, 0); }
     else if (a === 'upd') { appForceUpdate(); }
+    else if (a === 'uraoff') { if (confirm('裏モードをやめますか？\n（ごみ収集アプリとの連動が止まります）')) { try { localStorage.removeItem('gomi_admin_nav'); } catch (x) {} location.reload(); } }
   };
   document.addEventListener('click', function(e){ if (!e.target.closest('#menu') && !e.target.closest('#bMenu')) document.getElementById('menu').classList.remove('open'); });
 

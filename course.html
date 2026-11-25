@@ -148,7 +148,8 @@
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
-  .pop a.cbd{background:#8d5a2b;font-weight:bold;font-size:14px}
+  .pop a.cbd{display:block;margin:8px 0 4px;padding:14px 10px;text-align:center;background:#8d5a2b;font-weight:bold;font-size:18px;border-radius:10px;min-width:230px}
+  .pop a.cbd.done{background:#fff;color:#8d5a2b;border:2px solid #8d5a2b;padding:12px 10px}
   #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 63px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
 
   #card .gap{font-size:13px;font-weight:bold;color:#e65100;margin-top:3px}
@@ -355,10 +356,10 @@
     var m = L.marker(p, {icon: pinIcon(s.no, '')}).addTo(map);
     var g = 'https://www.google.com/maps/search/?api=1&query=' + s.lat + ',' + s.lng;
     m.bindPopup(function(){
-      var cbd = (cbf() && cbSet()[s.st]) ? '<br><a class="cbd" href="#" data-cd="' + idx + '">' + (done[s.no] ? '✓ 回収済み（押すと取り消し）' : '📦 回収完了') + '</a>' : '';
+      var cbd = (cbf() && cbSet()[s.st]) ? '<a class="cbd' + (done[s.no] ? ' done' : '') + '" href="#" data-cd="' + idx + '">' + (done[s.no] ? '✓ 回収済み（押すと取り消し）' : '📦 回収完了') + '</a>' : '';
       return '<div class="pop"><b>№' + s.no + '</b>　ST№' + s.st + '<br>地図: ' + s.map + '<br>' + esc(s.mark) + cbd +
         '<br><a class="main" href="#" data-idx="' + idx + '">ここを次にする</a><a class="sub" href="' + g + '" target="_blank">Googleマップで開く</a></div>';
-    });
+    }, {autoPanPaddingTopLeft: [10, 125], autoPanPaddingBottomRight: [10, 20]});
     m.on('click', function(){ if (cbf() && !(done[s.no])) { ack(s); cur = S.indexOf(s); prevIdx = cur - 2; render(true); return; } if (ack(s)) render(false); });   // タップしたら、確認済み（通常の色に戻る）
     markers[idx] = m;
   });
