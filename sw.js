@@ -1,6 +1,6 @@
 // ステーション地図 サービスワーカー（アプリ本体はオフラインでも開ける。地図の背景は通信が必要）
 // 開いたファイルは自動で保存され、次回からは電波がなくても開ける。オンラインのときは、常に最新を取りに行く
-var CACHE = 'gomi-map-v6';
+var CACHE = 'gomi-map-v7';
 var ASSETS = ['./', './index.html', './course.html', './all.html', './courses.js', './base.js', './poi.js', './sig.js', './ver.js', './simple-style.js', './manifest.json', './icon-192.png', './icon-512.png',
   './lib/leaflet.js', './lib/leaflet.css', './lib/maplibre-gl.js', './lib/maplibre-gl.css', './lib/leaflet-maplibre-gl.js',
   './lib/images/layers.png', './lib/images/layers-2x.png', './lib/images/marker-icon.png', './lib/images/marker-shadow.png'];
