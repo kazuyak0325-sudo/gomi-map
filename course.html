@@ -148,6 +148,7 @@
   }
   .pop a.main{background:#e65100;font-weight:bold;font-size:14px}
   .pop a.sub{background:#777}
+  .pop a.cbd{background:#8d5a2b;font-weight:bold;font-size:14px}
   #toast{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 63px);z-index:1200;background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:16px;font-size:13px;max-width:80%;text-align:center}
 
   #card .gap{font-size:13px;font-weight:bold;color:#e65100;margin-top:3px}
@@ -353,8 +354,11 @@
     var p = [s.lat, s.lng]; allLL.push(p);
     var m = L.marker(p, {icon: pinIcon(s.no, '')}).addTo(map);
     var g = 'https://www.google.com/maps/search/?api=1&query=' + s.lat + ',' + s.lng;
-    m.bindPopup('<div class="pop"><b>№' + s.no + '</b>　ST№' + s.st + '<br>地図: ' + s.map + '<br>' + esc(s.mark) +
-      '<br><a class="main" href="#" data-idx="' + idx + '">ここを次にする</a><a class="sub" href="' + g + '" target="_blank">Googleマップで開く</a></div>');
+    m.bindPopup(function(){
+      var cbd = (cbf() && cbSet()[s.st]) ? '<br><a class="cbd" href="#" data-cd="' + idx + '">' + (done[s.no] ? '✓ 回収済み（押すと取り消し）' : '📦 回収完了') + '</a>' : '';
+      return '<div class="pop"><b>№' + s.no + '</b>　ST№' + s.st + '<br>地図: ' + s.map + '<br>' + esc(s.mark) + cbd +
+        '<br><a class="main" href="#" data-idx="' + idx + '">ここを次にする</a><a class="sub" href="' + g + '" target="_blank">Googleマップで開く</a></div>';
+    });
     m.on('click', function(){ if (cbf() && !(done[s.no])) { ack(s); cur = S.indexOf(s); prevIdx = cur - 2; render(true); return; } if (ack(s)) render(false); });   // タップしたら、確認済み（通常の色に戻る）
     markers[idx] = m;
   });
@@ -370,6 +374,10 @@
   map.fitBounds(allLL.concat([CP]), {padding:[40,40]});
   zoomClass();
 
+  document.addEventListener('click', function(ev){
+    var cd = ev.target.closest ? ev.target.closest('a.cbd') : null; if (!cd) return; ev.preventDefault();
+    var i = +cd.getAttribute('data-cd'), s = S[i]; if (done[s.no]) delete done[s.no]; else done[s.no] = true; save(); map.closePopup(); render(false); try { var st0 = list.scrollTop; renderList(); list.scrollTop = st0; } catch(x) {} toast('№' + s.no + (done[s.no] ? ' ダンボール回収済み' : ' 回収を取り消しました'));
+  });
   map.on('popupopen', function(e){
     var a = e.popup.getElement().querySelector('a[data-idx]');
     if (a) a.onclick = function(ev){ ev.preventDefault(); if (following) setFollow(false); cur = +a.getAttribute('data-idx'); map.closePopup(); render(true); };
