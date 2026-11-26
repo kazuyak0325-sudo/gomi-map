@@ -175,6 +175,7 @@
     #card .c4.on,#card .c4.wide,#card .c4.on + .c3,#card .c4.wide + .c3{flex:0 0 100%}
     #card .c4.on{box-sizing:border-box}
     #card .lx{display:none}
+    .andr #card{padding-bottom:calc(env(safe-area-inset-bottom) + 26px)}   /* Androidの縦は、下を空ける */
     #hd2{display:none}   /* 車両番号・アプリで開くは、縦ではメニューの中（上のバーを1段にする） */
   }
   #hd #bMenu{font-size:22px;line-height:1;width:46px;height:35px;padding:0;flex:none}   /* メニューは ☰（ごみ収集アプリと同じ） */
@@ -195,6 +196,7 @@
 <div id="map"></div>
 <div id="huAttr"></div>
 <div id="toast"></div>
+<script>if (/Android/.test(navigator.userAgent) || (/Linux/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)) document.documentElement.classList.add('andr');</script>
 <div id="fab"><button id="bZin" aria-label="拡大">＋</button><button id="bZout" aria-label="縮小">－</button><button id="bLoc">現在地</button><button id="bHu" aria-label="地図の向きを切り替え">北が<br>上</button><button id="bLine">順路</button><button id="bAll">全ピン</button></div>
 <div id="rng"><b>順路を表示</b><br>№ <input id="rFrom" type="number" min="1" inputmode="numeric"> から № <input id="rTo" type="number" min="1" inputmode="numeric"> まで<br>
   <button id="rShow">表示</button><button id="rAll">全体</button><button id="rOff">消す</button></div>
