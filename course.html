@@ -178,14 +178,24 @@
     #hd2{display:none}   /* 車両番号・アプリで開くは、縦ではメニューの中（上のバーを1段にする） */
   }
   #hd #bMenu{font-size:22px;line-height:1;width:46px;height:35px;padding:0;flex:none}   /* メニューは ☰（ごみ収集アプリと同じ） */
+  /* 進行方向を上にする（追従中に走っている間）：地図を回し、ピン・名前・吹き出しは、まっすぐに戻す */
+  .hu-on .leaflet-marker-icon > div{rotate:var(--hu,0deg);transition:rotate .6s linear}
+  .hu-on .lbl .hut{display:inline-block;rotate:var(--hu,0deg);transform-origin:-22px 50%;transition:rotate .6s linear}
+  .hu-on .hupop{rotate:var(--hu,0deg);transform-origin:50% calc(100% + 7px);transition:rotate .6s linear}
+  .hu-on .me{position:relative}
+  .hu-on .me:before{content:'';position:absolute;left:50%;bottom:100%;margin:0 0 2px -9px;border:9px solid transparent;border-top:0;border-bottom:15px solid #1a73e8}
+  #huAttr{display:none;position:absolute;right:0;bottom:var(--cardh,300px);z-index:900;background:rgba(255,255,255,.75);font-size:9px;color:#333;padding:1px 5px;max-width:75%;pointer-events:none}
+  #huAttr svg{display:none}
+  @media (orientation:landscape) and (min-width:640px){ #huAttr{bottom:0;right:auto;left:var(--pw)} }
 </style>
 </head>
 <body>
 <div id="hd"><button id="bHome" aria-label="コース選択へ戻る">◀<span class="bl"> 戻る</span></button><button id="bList">一覧</button><b id="title">ごみ収集ナビ</b><button id="bMenu" aria-label="メニュー">☰</button><div id="hd2"><button id="bApp" style="display:none">📋 アプリで開く</button><button id="bVeh">🚛 車両 未入力</button></div></div>
 <div id="menu"></div>
 <div id="map"></div>
+<div id="huAttr"></div>
 <div id="toast"></div>
-<div id="fab"><button id="bZin" aria-label="拡大">＋</button><button id="bZout" aria-label="縮小">－</button><button id="bLoc">現在地</button><button id="bLine">順路</button><button id="bAll">全ピン</button></div>
+<div id="fab"><button id="bZin" aria-label="拡大">＋</button><button id="bZout" aria-label="縮小">－</button><button id="bLoc">現在地</button><button id="bHu" aria-label="地図の向きを切り替え">北が<br>上</button><button id="bLine">順路</button><button id="bAll">全ピン</button></div>
 <div id="rng"><b>順路を表示</b><br>№ <input id="rFrom" type="number" min="1" inputmode="numeric"> から № <input id="rTo" type="number" min="1" inputmode="numeric"> まで<br>
   <button id="rShow">表示</button><button id="rAll">全体</button><button id="rOff">消す</button></div>
 <div id="steps"></div>
@@ -306,6 +316,7 @@
       '<div class="mh">表示</div><button data-act="all" class="' + (showAll ? 'sel' : '') + '">' + (showAll ? '✓ ' : '') + '全ピンを番号つきで表示</button>' +
       '<button data-act="poi" class="' + (poiOn ? 'sel' : '') + '">' + (poiOn ? '✓ ' : '') + 'お店・目標物を表示</button>' +
       '<button data-act="nm" class="' + (nmOn ? 'sel' : '') + '">' + (nmOn ? '✓ ' : '') + 'ステーション名を表示</button>' +
+      '<button data-act="hu" class="' + (huPref ? 'sel' : '') + '">' + (huPref ? '✓ ' : '') + '追従中は進行方向を上にする</button>' +
       '<div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>' + '<div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
   }
   document.getElementById('bMenu').onclick = function(e){ e.stopPropagation(); if (menuEl.classList.contains('open')) { menuEl.classList.remove('open'); } else { renderMenu(); menuEl.classList.add('open'); } };
@@ -315,6 +326,7 @@
     else if (b.getAttribute('data-act') === 'all') { document.getElementById('bAll').click(); }
     else if (b.getAttribute('data-act') === 'poi') { setPoi(!poiOn); }
     else if (b.getAttribute('data-act') === 'nm') { setNm(!nmOn); }
+    else if (b.getAttribute('data-act') === 'hu') { huSet(!huPref); }
     else if (b.getAttribute('data-act') === 'veh') { menuEl.classList.remove('open'); askVeh(true); return; }
     else if (b.getAttribute('data-act') === 'app') { location.href = '/gomi-app/' + cid.replace('-', '/') + '/?plain=1'; return; }
     else if (b.getAttribute('data-act') === 'apptop') { location.href = '/gomi-app/'; return; }
@@ -423,6 +435,7 @@
     var a = Math.max(1, parseInt(rFrom.value, 10) || 1), b = Math.min(S.length, parseInt(rTo.value, 10) || S.length);
     if (!LG) { toast('区間データがありません'); return; }
     if (a >= b) { toast('終了は開始より大きい番号にしてください'); return; }
+    if (huOn) setFollow(false);
     clearRange();
     var pts = [], km = 0, mn = 0;
     for (var k = a; k <= b - 1; k++) { pts = pts.concat(LG[k].l); km += LG[k].km; mn += LG[k].min; }
@@ -433,6 +446,7 @@
     rng.style.display = 'none';
   };
   document.getElementById('rAll').onclick = function(){
+    if (huOn) setFollow(false);
     clearRange(); allLine.addTo(map); bLine.classList.add('on'); rng.style.display = 'none';
     map.fitBounds(allLL.concat([CP]), {padding:[40,40]}); if (R) toast('全体（会社→№1〜№' + S.length + '→会社）約' + R.km + 'km');
   };
@@ -458,7 +472,7 @@
       markers[i].setZIndexOffset(i === cur ? 800 : (focus ? 200 : 0));
       markers[i].unbindTooltip();
       // 目標物の名前：今向かう場所は常に表示、ほかのピンは拡大したとき（z-label）に表示
-      if ((i === cur || focus) && s.mark) markers[i].bindTooltip(esc(s.mark), {permanent:true, direction:'right', offset:[16,0], className: i === cur ? 'lbl now' : 'lbl'});
+      if ((i === cur || focus) && s.mark) markers[i].bindTooltip('<span class="hut">' + esc(s.mark) + '</span>', {permanent:true, direction:'right', offset:[16,0], className: i === cur ? 'lbl now' : 'lbl'});
     });
     var ci = document.getElementById('coIcon'); if (ci) ci.className = 'co' + (cur >= S.length ? ' sel' : '');
     var nDone = S.filter(function(s){ return done[s.no]; }).length;
@@ -510,7 +524,7 @@
     syncCard();
   }
   // カードの高さを、右下ボタンなどの位置に反映する
-  function syncCard(){ var c = document.getElementById('card'); document.documentElement.style.setProperty('--cardh', c.offsetHeight + 'px'); }
+  function syncCard(){ var c = document.getElementById('card'); document.documentElement.style.setProperty('--cardh', c.offsetHeight + 'px'); if (huOn) huLayout(false); }
   // 一覧のチェックから、好きな場所を完了／取り消しにする（順番を飛ばした場所の記録用）
   function toggleDone(i){
     var s = S[i], now = !done[s.no];
@@ -626,14 +640,94 @@
   }
   function toggleSteps(){ stepsEl.classList.toggle('open'); }
 
+  // ---- 進行方向を上にする ----
+  // 追従中に走っている間は、地図の入れ物を大きくして回し、現在地を画面の下寄りに置く（先の道が広く見える）。指で地図を動かすと、北が上に戻る
+  var huPref = true; try { huPref = localStorage.getItem('gomi-map:hu') !== '0'; } catch(e) {}
+  var huOn = false, hdg = null, huAngle = 0, huRef = null, huGeo = '', huDrag = false;
+  var mapEl = map.getContainer();
+  function huHeading(co){   // GPSの向き。取れない端末では、12m以上動いたときの向きを使う。止まっている間は、前の向きのまま
+    var here = [co.latitude, co.longitude], h = null;
+    if (typeof co.heading === 'number' && isFinite(co.heading) && co.speed > 1.4) { h = co.heading; huRef = here; }
+    else if (!huRef) huRef = here;
+    else if (hav(huRef, here) >= 12 && !(co.accuracy > 40)) {
+      var r = Math.PI / 180, y = Math.sin((here[1] - huRef[1]) * r) * Math.cos(here[0] * r),
+        x = Math.cos(huRef[0] * r) * Math.sin(here[0] * r) - Math.sin(huRef[0] * r) * Math.cos(here[0] * r) * Math.cos((here[1] - huRef[1]) * r);
+      h = (Math.atan2(y, x) / r + 360) % 360; huRef = here;
+    }
+    if (h !== null) hdg = h;
+  }
+  function huRotate(){
+    var diff = ((hdg - huAngle) % 360 + 540) % 360 - 180;   // 近いほうの回り方で回す
+    if (Math.abs(diff) >= 4) huAngle += diff;
+    mapEl.style.transform = 'rotate(' + (-huAngle) + 'deg)';
+    mapEl.style.setProperty('--hu', huAngle + 'deg');
+  }
+  function huLayout(force){
+    var W = document.body.clientWidth, H = document.body.clientHeight, land = isLandscape(), card = document.getElementById('card');
+    var l = land ? card.offsetWidth : 0, t = document.getElementById('hd').offsetHeight, b = land ? H : H - card.offsetHeight;
+    var x = Math.round((l + W) / 2), y = Math.round(t + (b - t) * 0.68);
+    var R = Math.ceil(Math.max(Math.hypot(x, y - t), Math.hypot(W - x, y - t), Math.hypot(x, b - y), Math.hypot(W - x, b - y))) + 24;   // 左は画面の端まで（横向きは、カードの下にも地図が見える）
+    var geo = [x, y, R].join(',');
+    if (!force && geo === huGeo) return;
+    huGeo = geo;
+    var st = mapEl.style; st.left = (x - R) + 'px'; st.top = (y - R) + 'px'; st.width = st.height = (2 * R) + 'px'; st.right = st.bottom = 'auto';
+    map.invalidateSize({pan:false}); map.setView(lastPos, map.getZoom(), {animate:false});
+  }
+  function huZoomMode(on){ var v = on ? 'center' : true; map.options.touchZoom = map.options.scrollWheelZoom = map.options.doubleClickZoom = v;
+    Object.keys(markers).forEach(function(k){ var p = markers[k].getPopup(); if (p) p.options.autoPan = !on; }); }
+  function huStart(){
+    huOn = true; huAngle = 0; huZoomMode(true);
+    mapEl.style.transition = 'none'; huLayout(true);
+    mapEl.classList.add('hu-on');
+    var a = document.getElementById('huAttr'); a.innerHTML = map.attributionControl.getContainer().innerHTML; a.style.display = 'block';
+    void mapEl.offsetWidth; mapEl.style.transition = 'transform .6s linear';
+    huRotate();
+  }
+  function huRestore(){   // 地図の入れ物を元の大きさに戻す（見えている場所は、そのまま）
+    if (huOn) return;
+    var W = document.body.clientWidth, H = document.body.clientHeight, st = mapEl.style;
+    var center = map.containerPointToLatLng([W / 2 - (parseFloat(st.left) || 0), H / 2 - (parseFloat(st.top) || 0)]);
+    st.left = st.top = st.width = st.height = st.right = st.bottom = ''; huGeo = '';
+    huZoomMode(false);
+    map.invalidateSize({pan:false}); map.setView(center, map.getZoom(), {animate:false});
+  }
+  function huStop(){
+    if (!huOn) return;
+    huOn = false; huAngle = 0;
+    mapEl.style.transition = 'none'; mapEl.style.transform = ''; mapEl.classList.remove('hu-on'); mapEl.style.removeProperty('--hu');
+    document.getElementById('huAttr').style.display = 'none';
+    if (huDrag) map.once('dragend', huRestore); else huRestore();   // 指で動かしている最中は、指を離してから戻す
+  }
+  // 地図の向きの切り替えボタン（いまの状態を表示。追従中で「進行方向」なら青、それ以外は「北が上」）
+  var bHu = document.getElementById('bHu');
+  function huBtn(){ var on = huPref && following; bHu.classList.toggle('on', on); bHu.innerHTML = on ? '進行<br>方向' : '北が<br>上'; }
+  function huSet(v){ huPref = v; try { localStorage.setItem('gomi-map:hu', v ? '1' : '0'); } catch(x) {} if (!v) { huStop(); if (following && lastPos) map.setView(lastPos, map.getZoom()); } else if (following) huUpdate(); huBtn(); }
+  bHu.onclick = function(){
+    if (huPref && following) { huSet(false); toast('北を上にします'); return; }
+    huSet(true);
+    if (!following) bLoc.onclick();   // 追従していないときは、現在地の追従も始める
+    toast('進行方向を上にします（走ると地図が回ります）');
+  };
+  setTimeout(huBtn, 0);
+  function huUpdate(){   // 追従中に現在地が変わったとき。回しているなら true
+    if (!huPref || hdg === null || !lastPos) return false;
+    if (!huOn) huStart(); else { huRotate(); map.panTo(lastPos, {animate:true, duration:0.5}); }
+    return true;
+  }
+  map.on('popupopen', function(e){   // 吹き出しも、まっすぐに読めるようにする
+    var el = e.popup.getElement(); if (!el || el.querySelector('.hupop')) return;
+    var w = document.createElement('div'); w.className = 'hupop'; while (el.firstChild) w.appendChild(el.firstChild); el.appendChild(w);
+  });
+
   // ---- 現在地 ----
   var me = null, watching = false, bLoc = document.getElementById('bLoc');
   function hav(a, b){ var R2 = 6371000, r = Math.PI/180, dLa = (b[0]-a[0])*r, dLo = (b[1]-a[1])*r;
     var x = Math.sin(dLa/2)*Math.sin(dLa/2) + Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)*Math.sin(dLo/2); return 2*R2*Math.asin(Math.sqrt(x)); }
   function updateDist(){ var el = document.getElementById('gd'); if (!el) return; el.textContent = lastPos ? '　／　現在地から約' + fmtD(hav(lastPos, pos(cur))) : ''; }
   // 自動追従：青い点に合わせて地図が動く。地図を指で動かすと一時停止し、「現在地」ボタンで再開
-  function setFollow(on){ following = on; bLoc.classList.toggle('on', on); bLoc.textContent = on ? '追従中' : '現在地'; }
-  map.on('dragstart', function(){ if (following) { setFollow(false); toast('追従を一時停止しました。「現在地」で再開します'); } });
+  function setFollow(on){ following = on; bLoc.classList.toggle('on', on); bLoc.textContent = on ? '追従中' : '現在地'; if (!on) huStop(); huBtn(); }
+  map.on('dragend', function(){ huDrag = false; });
+  map.on('dragstart', function(){ huDrag = true; var dg = map.dragging._draggable; if (huOn && dg && dg._parentScale) dg._parentScale.x = dg._parentScale.y = 1; if (following) { setFollow(false); toast('追従を一時停止しました。「現在地」で再開します'); } });
 
   // 画面を消さない設定（Wake Lock）。対応していない端末では何もしない
   var wake = null;
@@ -648,16 +742,17 @@
 
   bLoc.onclick = function(){
     if (!navigator.geolocation) { toast('この端末では現在地を取得できません'); return; }
-    if (watching && me) { setFollow(true); map.setView(me.getLatLng(), Math.max(map.getZoom(), 16)); return; }
+    if (watching && me) { setFollow(true); map.setView(me.getLatLng(), Math.max(map.getZoom(), 16)); huUpdate(); return; }
     navigator.geolocation.watchPosition(function(p){
       lastPos = [p.coords.latitude, p.coords.longitude];
+      huHeading(p.coords);
       if (!me) {
         me = L.marker(lastPos, {icon:L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[16,16], iconAnchor:[8,8]}), interactive:false}).addTo(map);
         map.setView(lastPos, 16); setFollow(true);
         if (!keepAwake()) toast('この端末では「画面を消さない設定」は使えません。画面を点けたままにしてください');
       } else {
         me.setLatLng(lastPos);
-        if (following) map.panTo(lastPos, {animate:true, duration:0.5});
+        if (following && !huUpdate()) map.panTo(lastPos, {animate:true, duration:0.5});
       }
       watching = true; updateDist();
     }, function(err){
