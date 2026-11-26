@@ -30,4 +30,24 @@ function appForceUpdate() {
   };
   document.addEventListener('fullscreenchange', draw);
   draw(); menu.parentNode.insertBefore(b, menu);
+  // 全画面中は上の帯（時計など）が隠れるので、時刻・電池残量・圏外を、⛶の左に出す（電波の本数は、ホームページからは分からない）
+  st.textContent += '#fsStat{display:none;flex:none;align-items:center;gap:10px;font-size:16px;font-weight:bold;white-space:nowrap}'
+    + '#fsStat .off{background:#d32f2f;color:#fff;border-radius:8px;padding:2px 8px}'
+    + '@media (min-width:600px) and (min-height:500px){#fsStat.on{display:flex}}'
+    + '@media (orientation:landscape) and (min-width:640px){#hd #fsStat{order:5}}';
+  var info = document.createElement('span'); info.id = 'fsStat'; menu.parentNode.insertBefore(info, b);
+  var battery = null, timer = null;
+  function show() {
+    var on = !!document.fullscreenElement; info.className = on ? 'on' : '';
+    if (!on) return;
+    var d = new Date(), h = '';
+    if (navigator.onLine === false) h += '<span class="off">圏外</span>';
+    h += '<span>' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2) + '</span>';
+    if (battery) h += '<span>' + (battery.charging ? '⚡' : '🔋') + Math.round(battery.level * 100) + '%</span>';
+    info.innerHTML = h;
+  }
+  if (navigator.getBattery) navigator.getBattery().then(function (bt) { battery = bt; bt.addEventListener('levelchange', show); bt.addEventListener('chargingchange', show); show(); }).catch(function () {});
+  window.addEventListener('online', show); window.addEventListener('offline', show);
+  document.addEventListener('visibilitychange', show);
+  document.addEventListener('fullscreenchange', function () { clearInterval(timer); if (document.fullscreenElement) timer = setInterval(show, 5000); show(); });
 })();
