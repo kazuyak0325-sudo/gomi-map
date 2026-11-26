@@ -1,7 +1,7 @@
 // ステーション地図 サービスワーカー（アプリ本体はオフラインでも開ける。地図の背景は通信が必要）
 // 開いたファイルは自動で保存され、次回からは電波がなくても開ける。オンラインのときは、常に最新を取りに行く
 var CACHE = 'gomi-map-v9';
-var ASSETS = ['./', './index.html', './course.html', './all.html', './courses.js', './base.js', './poi.js', './sig.js', './ver.js', './simple-style.js', './manifest.json', './icon-192.png', './icon-512.png',
+var ASSETS = ['./', './index.html', './course.html', './all.html', './courses.js', './base.js', './poi.js', './sig.js', './ver.js', './simple-style.js', './route.js', './roads-v1.json', './kinsi.json', './manifest.json', './icon-192.png', './icon-512.png',
   './lib/leaflet.js', './lib/leaflet.css', './lib/maplibre-gl.js', './lib/maplibre-gl.css', './lib/leaflet-maplibre-gl.js',
   './lib/images/layers.png', './lib/images/layers-2x.png', './lib/images/marker-icon.png', './lib/images/marker-shadow.png'];
 
@@ -21,6 +21,12 @@ self.addEventListener('fetch', function(e){
   var url = new URL(e.request.url);
   if (url.origin !== location.origin) return;           // 地図タイル等は通常通信
   var key = url.origin + url.pathname;                  // 検索部分(?c=…, ?t=…)は保存の名前に含めない
+  if (/\/roads-v\d+\.json$/.test(url.pathname)) {       // 道路データは大きいので、保存したものを使う（中身を替えるときは、名前の番号を上げる）
+    e.respondWith(caches.match(key).then(function(hit){
+      return hit || fetch(e.request).then(function(res){ if (res.ok) { var copy = res.clone(); caches.open(CACHE).then(function(c){ c.put(key, copy); }); } return res; });
+    }));
+    return;
+  }
   e.respondWith(
     fetch(e.request, {cache:'no-store'}).then(function(res){
       if (res.ok) { var copy = res.clone(); caches.open(CACHE).then(function(c){ c.put(key, copy); }); }
