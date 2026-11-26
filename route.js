@@ -45,8 +45,8 @@ var GomiRoute = (function(){
   function angle(a, b){ return Math.abs(((a - b) % 360 + 540) % 360 - 180); }
 
   // from から to までの道順。heading は進んでいる向き（度。分からなければ null）。見つからなければ null
-  function find(g, from, dest, heading){
-    var sc = near(g, from, 60), gc = near(g, dest, 400);
+  function find(g, from, dest, heading, startMax){   // startMax: 出発点から道を探す距離（m。ふだんは60）
+    var sc = near(g, from, startMax || 60), gc = near(g, dest, 400);
     if (!sc.length || !gc.length) return null;
     sc = sc.filter(function(c){ return c.d <= sc[0].d + 20; });
     gc = gc.filter(function(c){ return c.d <= gc[0].d + 8; });

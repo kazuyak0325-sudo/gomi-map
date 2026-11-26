@@ -528,12 +528,12 @@
 
     // カード
     var s = cur < S.length ? S[cur] : null, fin = cur >= S.length;
-    var prevName = cbm ? '現在地' : (prevIdx < 0 ? '会社' : '№' + S[prevIdx].no);
+    var prevName = (cbm || rr) ? '現在地' : (prevIdx < 0 ? '会社' : '№' + S[prevIdx].no);
     var allDone = fin && S.length && done[S[S.length-1].no];
     var title = fin ? '会社' : '№' + s.no;
     var main = fin ? (COMPANY.address) : ('ST' + s.st + '　' + esc(s.mark));
     var sub = (fin ? '№' + S[S.length-1].no : prevName) + (fin ? '' : '') + 'から';
-    var legInfo = cbm ? '' : (rr ? ('　引き直し ' + rr.km + 'km・約' + rr.min + '分') : leg ? ('　' + leg.km + 'km・約' + leg.min + '分') : ('　直線 約' + fmtD(hav(from, to)) + '（点線・道順なし）'));
+    var legInfo = cbm ? '' : (rr ? ('　' + rr.km + 'km・約' + rr.min + '分') : leg ? ('　' + leg.km + 'km・約' + leg.min + '分') : ('　直線 約' + fmtD(hav(from, to)) + '（点線・道順なし）'));
     var gHref = (seq && !cbm && !rr) ? gdir(from, to) : ('https://www.google.com/maps/dir/?api=1&destination=' + to[0] + ',' + to[1] + '&travelmode=driving');
     // 前の場所と今の場所の間に、位置が未登録のステーション(№が飛ぶ)があれば、注意を出す
     var gapHtml = '';
@@ -542,7 +542,7 @@
       var gaps = C.missing.filter(function(m){ return m.no > pn && m.no < s.no; }).map(function(m){ return '№' + m.no; });
       if (gaps.length) gapHtml = '<div class="gap">⚠ ' + gaps.slice(0, 4).join('・') + (gaps.length > 4 ? ' ほか' + (gaps.length - 4) + '件' : '') + ' は位置未登録（一覧の最後で確認）</div>';
     }
-    if (rr) gapHtml += '<div class="gap">⚠ 引き直した道です。通れるかは、標識に従ってください</div>';
+    if (rr) gapHtml += '<div class="gap">⚠ 引き直した道です。標識に従ってください</div>';
     if (!rr && krNote === 'alt') gapHtml += '<div class="gap">🚫 会社の登録に合わせて、道順を替えています。標識に従ってください</div>';
     if (krNote === 'bad' && !rr) gapHtml += '<div class="gap" style="color:#c62828">🚫 この道順は、会社で登録した禁止場所を通ります。ご注意ください</div>';
     if (!fin && isNew(s)) gapHtml += '<div class="gap" style="color:#e53935">★ 新しく追加・修正された位置です（ピンをタップすると、通常の色に戻ります）</div>';
@@ -774,27 +774,46 @@
     offN++;
     // GPSのぶれや、停車中（回収中）には、引き直さない：3回以上・4秒以上外れていて、25m以上動いたとき。続けて引き直すのは8秒あける
     if (offN < 3 || now - offTime < 4000 || hav(offAt, here) < 25 || now - rrLast < 8000 || rrBusy) return;
-    rrBusy = true; rrLast = now;
+    rrGo(hdg, false);
+  }
+  // 「現在地」を押した時：道順から150m以上離れていれば、止まっていても、現在地から行き先までの道順を出す
+  var askAt = 0;   // 「現在地」を押した時刻（位置がはっきりするまで、60秒まで待つ）
+  function rrAsk(co){
+    if (!askAt || !co) return;
+    if (!rrPref || !curLeg || !lastPos || Date.now() - askAt > 60000) { askAt = 0; return; }
+    if (co.accuracy > 100 || rrBusy) return;   // 位置がまだ大まかな時は、次の位置を待つ
+    askAt = 0;
+    if (GomiRoute.distToLine(lastPos, rr ? rr.line : curLeg.l).d < 150 || hav(lastPos, curTo) < 80) return;
+    rrGo(co.speed > 1.4 ? hdg : null, true);
+  }
+  function rrGo(heading, asked){
+    rrBusy = true; rrLast = Date.now();
     var key = rrKey;
     GomiRoute.load().then(function(g){
       rrBusy = false;
       if (key !== rrKey || !rrPref || !curLeg) return;
       var act = krNow(); GomiRoute.setRules(g, act);
-      var r = GomiRoute.find(g, lastPos, curTo, hdg);
-      if (!r) return;
+      var r = GomiRoute.find(g, lastPos, curTo, heading, asked ? 300 : 60);
+      if (!r) {
+        if (asked) toast(GomiRoute.near(g, lastPos, 1000).length ? '現在地の近くから、道順を出せませんでした' : '現在地は道路データの範囲（収集コースの周辺）の外のため、現在地からの道順は出せません', 6000);
+        return;
+      }
       if (GomiRoute.violates(r.line, act).length) {   // 禁止を避けられないときは、引き直した線を出さず、お知らせする（次のお知らせは30秒あける）
         rrLast = Date.now() + 22000; rrReset(); toast('登録した禁止場所を避ける道が見つかりません。標識に従ってください', 5000); return;
       }
-      rr = r; rrReset(); render(false); toast('道を引き直しました。標識に従ってください', 3500);
+      rr = r; rrReset(); render(false); toast(asked ? '現在地からの道順を表示しました。標識に従ってください' : '道を引き直しました。標識に従ってください', 3500);
     }).catch(function(){ rrBusy = false; });
   }
   function rrSet(v){ rrPref = v; try { localStorage.setItem('gomi-map:rr', v ? '1' : '0'); } catch(x) {} rrReset(); if (!v && rr) { rr = null; render(false); } }
 
   // ---- 現在地 ----
   var me = null, watching = false, bLoc = document.getElementById('bLoc');
+  var lastCo = null;   // 最後に届いた位置の情報
+  var drawn = null;   // 最後に地図に描いた現在地。停車中（遅く、そこから6m未満）は、地図を描き直さない（電池の節約）
+  function stopped(co){ return !!drawn && !(co.speed > 1.4) && hav(drawn, lastPos) < 6; }
   function hav(a, b){ var R2 = 6371000, r = Math.PI/180, dLa = (b[0]-a[0])*r, dLo = (b[1]-a[1])*r;
     var x = Math.sin(dLa/2)*Math.sin(dLa/2) + Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)*Math.sin(dLo/2); return 2*R2*Math.asin(Math.sqrt(x)); }
-  function updateDist(){ var el = document.getElementById('gd'); if (!el) return; el.textContent = lastPos ? '　／　現在地から約' + fmtD(hav(lastPos, pos(cur))) : ''; }
+  function updateDist(){ var el = document.getElementById('gd'); if (!el) return; el.textContent = lastPos ? (rr ? '　／　直線' : '　／　現在地から約') + fmtD(hav(lastPos, pos(cur))) : ''; }
   // 自動追従：青い点に合わせて地図が動く。地図を指で動かすと一時停止し、「現在地」ボタンで再開
   function setFollow(on){ following = on; bLoc.classList.toggle('on', on); bLoc.textContent = on ? '追従中' : '現在地'; if (!on) huStop(); huBtn(); }
   map.on('dragend', function(){ huDrag = false; });
@@ -813,19 +832,22 @@
 
   bLoc.onclick = function(){
     if (!navigator.geolocation) { toast('この端末では現在地を取得できません'); return; }
-    if (watching && me) { setFollow(true); map.setView(me.getLatLng(), Math.max(map.getZoom(), 16)); huUpdate(); return; }
+    askAt = Date.now();
+    if (watching && me) { setFollow(true); map.setView(me.getLatLng(), Math.max(map.getZoom(), 16)); huUpdate(); rrAsk(lastCo); return; }
     navigator.geolocation.watchPosition(function(p){
       lastPos = [p.coords.latitude, p.coords.longitude];
       huHeading(p.coords);
+      var still = false;
       if (!me) {
+        drawn = lastPos;
         me = L.marker(lastPos, {icon:L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[16,16], iconAnchor:[8,8]}), interactive:false}).addTo(map);
         map.setView(lastPos, 16); setFollow(true);
         if (!keepAwake()) toast('この端末では「画面を消さない設定」は使えません。画面を点けたままにしてください');
-      } else {
-        me.setLatLng(lastPos);
+      } else if (!(still = stopped(p.coords))) {
+        drawn = lastPos; me.setLatLng(lastPos);
         if (following && !huUpdate()) map.panTo(lastPos, {animate:true, duration:0.5});
       }
-      watching = true; updateDist(); rrCheck(p.coords);
+      watching = true; if (!still) updateDist(); lastCo = p.coords; rrCheck(p.coords); rrAsk(p.coords);
     }, function(err){
       if (me) return;   // 追跡が始まったあとの一時的な途切れでは、案内を出さない
       var ua = navigator.userAgent, inApp = /Line\/|FBAN|FBAV|Instagram|GSA\/|Gmail|wv\)/i.test(ua);
