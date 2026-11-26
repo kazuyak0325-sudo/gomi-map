@@ -761,7 +761,7 @@
   function rrReset(){ offN = 0; offAt = null; backN = 0; }
   function rrCheck(co){
     if (!rrPref || !curLeg || !lastPos || co.accuracy > 40) return;
-    var here = lastPos, now = Date.now(), moving = !(co.speed >= 0 && co.speed <= 1.4);
+    var here = lastPos, now = Date.now(), moving = !(typeof co.speed === 'number' && co.speed <= 1.4);   // 速さが分からない端末は、動いているとみなす
     if (rr) {   // 元の道に戻って、同じ向きに進んでいたら、元の表示にする
       var o = GomiRoute.distToLine(here, curLeg.l);
       if (o.d <= 25 && moving && (hdg === null || o.brg === null || GomiRoute.angle(hdg, o.brg) < 60)) {
@@ -778,9 +778,12 @@
     GomiRoute.load().then(function(g){
       rrBusy = false;
       if (key !== rrKey || !rrPref || !curLeg) return;
-      GomiRoute.setRules(g, krNow());
+      var act = krNow(); GomiRoute.setRules(g, act);
       var r = GomiRoute.find(g, lastPos, curTo, hdg);
       if (!r) return;
+      if (GomiRoute.violates(r.line, act).length) {   // 禁止を避けられないときは、引き直した線を出さず、お知らせする（次のお知らせは30秒あける）
+        rrLast = Date.now() + 22000; rrReset(); toast('登録した禁止場所を避ける道が見つかりません。標識に従ってください', 5000); return;
+      }
       rr = r; rrReset(); render(false); toast('道を引き直しました。標識に従ってください', 3500);
     }).catch(function(){ rrBusy = false; });
   }
