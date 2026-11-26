@@ -39,10 +39,11 @@
   #menu .mh{font-size:12px;color:#777;padding:6px 8px 2px}
   #menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:12px 10px;font-size:16px;border-radius:8px;color:#222;font-weight:normal}
   #menu .ver{font-size:13px;color:#555;padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px}
+  header #bMenu{font-size:22px;line-height:1;width:46px;height:35px;padding:0;flex:none}   /* メニューは ☰（ごみ収集アプリと同じ） */
 </style>
 </head>
 <body>
-<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ごみ収集ナビ</b><button class="adminbtn" id="adm">⚙ 管理</button><button id="bMenu">☰ メニュー</button></header>
+<header><button id="back" style="display:none">◀ 戻る</button><b id="ttl">ごみ収集ナビ</b><button class="adminbtn" id="adm">⚙ 管理</button><button id="bMenu" aria-label="メニュー">☰</button></header>
 <div id="menu"></div>
 <main>
   <div id="v1">

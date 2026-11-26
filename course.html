@@ -175,11 +175,13 @@
     #card .c4.on,#card .c4.wide,#card .c4.on + .c3,#card .c4.wide + .c3{flex:0 0 100%}
     #card .c4.on{box-sizing:border-box}
     #card .lx{display:none}
+    #hd2{display:none}   /* 車両番号・アプリで開くは、縦ではメニューの中（上のバーを1段にする） */
   }
+  #hd #bMenu{font-size:22px;line-height:1;width:46px;height:35px;padding:0;flex:none}   /* メニューは ☰（ごみ収集アプリと同じ） */
 </style>
 </head>
 <body>
-<div id="hd"><button id="bHome" aria-label="コース選択へ戻る">◀<span class="bl"> 戻る</span></button><button id="bList">一覧</button><b id="title">ごみ収集ナビ</b><button id="bMenu">メニュー</button><div id="hd2"><button id="bApp" style="display:none">📋 アプリで開く</button><button id="bVeh">🚛 車両 未入力</button></div></div>
+<div id="hd"><button id="bHome" aria-label="コース選択へ戻る">◀<span class="bl"> 戻る</span></button><button id="bList">一覧</button><b id="title">ごみ収集ナビ</b><button id="bMenu" aria-label="メニュー">☰</button><div id="hd2"><button id="bApp" style="display:none">📋 アプリで開く</button><button id="bVeh">🚛 車両 未入力</button></div></div>
 <div id="menu"></div>
 <div id="map"></div>
 <div id="toast"></div>
@@ -300,11 +302,11 @@
   var curBase = simple || pale;
   var menuEl = document.getElementById('menu');
   function renderMenu(){
-    menuEl.innerHTML = '<div class="mh">地図の種類</div>' + baseDefs.map(function(d, i){ var on = d[1] === curBase; return '<button data-b="' + i + '" class="' + (on ? 'sel' : '') + '">' + (on ? '✓ ' : '') + d[0] + '</button>'; }).join('') +
+    menuEl.innerHTML = '<div class="mh">車両</div><button data-act="veh">🚛 車両 ' + (getVeh() || '未入力') + '（変更）</button>' + (isAdminDev() ? '<div class="mh">管理者</div><button data-act="app">📋 ごみ収集アプリで開く</button><button data-act="apptop">🏠 ごみ収集アプリのトップ</button>' : '') + '<div class="mh">地図の種類</div>' + baseDefs.map(function(d, i){ var on = d[1] === curBase; return '<button data-b="' + i + '" class="' + (on ? 'sel' : '') + '">' + (on ? '✓ ' : '') + d[0] + '</button>'; }).join('') +
       '<div class="mh">表示</div><button data-act="all" class="' + (showAll ? 'sel' : '') + '">' + (showAll ? '✓ ' : '') + '全ピンを番号つきで表示</button>' +
       '<button data-act="poi" class="' + (poiOn ? 'sel' : '') + '">' + (poiOn ? '✓ ' : '') + 'お店・目標物を表示</button>' +
       '<button data-act="nm" class="' + (nmOn ? 'sel' : '') + '">' + (nmOn ? '✓ ' : '') + 'ステーション名を表示</button>' +
-      '<div class="mh">車両</div><button data-act="veh">🚛 車両 ' + (getVeh() || '未入力') + '（変更）</button><div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>' + (isAdminDev() ? '<div class="mh">管理者</div><button data-act="app">📋 ごみ収集アプリで開く</button><button data-act="apptop">🏠 ごみ収集アプリのトップ</button>' : '') + '<div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
+      '<div class="mh">アプリ</div><button data-act="upd">🔄 最新版に更新</button><div class="mh" style="padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px">バージョン ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '-') + '</div>' + '<div class="mh">ほか</div><button data-act="home">🏠 トップに戻る</button>';
   }
   document.getElementById('bMenu').onclick = function(e){ e.stopPropagation(); if (menuEl.classList.contains('open')) { menuEl.classList.remove('open'); } else { renderMenu(); menuEl.classList.add('open'); } };
   menuEl.onclick = function(e){

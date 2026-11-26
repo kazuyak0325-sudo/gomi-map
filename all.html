@@ -77,10 +77,11 @@
   #menu .mh{font-size:12px;color:#777;padding:6px 8px 2px}
   #menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:12px 10px;font-size:16px;border-radius:8px;color:#222;font-weight:normal}
   #menu .ver{font-size:13px;color:#555;padding:8px 10px 4px;border-top:1px solid #e5e5e5;margin-top:4px}
+  #hd #bMenu{font-size:22px;line-height:1;width:46px;height:35px;padding:0;flex:none}   /* メニューは ☰（ごみ収集アプリと同じ） */
 </style>
 </head>
 <body>
-<div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b><button class="adminbtn" id="adm">⚙ 管理</button><button id="bMenu">☰ メニュー</button></div>
+<div id="hd"><button id="back">◀ 戻る</button><b>全ステーションマップ</b><button class="adminbtn" id="adm">⚙ 管理</button><button id="bMenu" aria-label="メニュー">☰</button></div>
 <div id="menu"></div>
 <div id="bar"><input id="sq" type="search" placeholder="🔍 ステーション検索" autocomplete="off"><button id="bNew">NEW <span id="nn">0</span></button><button id="bAer">写真</button><button id="bMiss">⚠ 位置なし <span id="nm">0</span></button></div>
 <div id="sub"></div>
