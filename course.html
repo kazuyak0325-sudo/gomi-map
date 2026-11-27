@@ -808,6 +808,7 @@
 
   // ---- 現在地 ----
   var me = null, watching = false, bLoc = document.getElementById('bLoc');
+  var watchId = null;   // 位置の見張りは、いつも1つだけ
   var lastCo = null;   // 最後に届いた位置の情報
   var drawn = null;   // 最後に地図に描いた現在地。停車中（遅く、そこから6m未満）は、地図を描き直さない（電池の節約）
   function stopped(co){ return !!drawn && !(co.speed > 1.4) && hav(drawn, lastPos) < 6; }
@@ -834,7 +835,8 @@
     if (!navigator.geolocation) { toast('この端末では現在地を取得できません'); return; }
     askAt = Date.now();
     if (watching && me) { setFollow(true); map.setView(me.getLatLng(), Math.max(map.getZoom(), 16)); huUpdate(); rrAsk(lastCo); return; }
-    navigator.geolocation.watchPosition(function(p){
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);   // 位置が届く前にもう一度押されたら、前の見張りをやめて、やり直す
+    watchId = navigator.geolocation.watchPosition(function(p){
       lastPos = [p.coords.latitude, p.coords.longitude];
       huHeading(p.coords);
       var still = false;
